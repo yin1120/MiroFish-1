@@ -1,13 +1,13 @@
 <template>
   <div class="process-page">
-    <!-- 顶部导航栏 -->
+    <!-- 頂部導覽列 -->
     <nav class="navbar">
       <div class="nav-brand" @click="goHome">MIROFISH</div>
       
-      <!-- 中间步骤指示器 -->
+      <!-- 中間步驟指示器 -->
       <div class="nav-center">
         <div class="step-badge">STEP 01</div>
-        <div class="step-name">图谱构建</div>
+        <div class="step-name">圖譜構建</div>
       </div>
 
       <div class="nav-status">
@@ -564,55 +564,59 @@ const initProject = async () => {
   }
 }
 
-// 处理新建项目 - 调用 ontology/generate API
+// 處理新建專案 - 呼叫 ontology/generate API
 const handleNewProject = async () => {
   const pending = getPendingUpload()
   
   if (!pending.isPending || pending.files.length === 0) {
-    error.value = '没有待上传的文件，请返回首页重新操作'
+    error.value = '沒有待上傳的檔案，請返回首頁重新操作'
     loading.value = false
     return
   }
   
   try {
     loading.value = true
-    currentPhase.value = 0 // 本体生成阶段
-    ontologyProgress.value = { message: '正在上传文件并分析文档...' }
+    currentPhase.value = 0 // 本體生成階段
+    ontologyProgress.value = { message: '正在上傳檔案並分析文件... (這可能需要 10-15 分鐘)' }
     
-    // 构建 FormData
+    // 構建 FormData
     const formDataObj = new FormData()
     pending.files.forEach(file => {
       formDataObj.append('files', file)
     })
     formDataObj.append('simulation_requirement', pending.simulationRequirement)
     
-    // 调用本体生成 API
+    // 呼叫本體生成 API
+    console.log('[DEBUG] 開始發送本體生成請求，時間:', new Date().toLocaleTimeString())
     const response = await generateOntology(formDataObj)
+    console.log('[DEBUG] 收到本體生成回應:', response)
     
     if (response.success) {
-      // 清除待上传数据
+      // 清除待上傳資料
       clearPendingUpload()
       
-      // 更新项目ID和数据
+      // 更新專案ID和資料
       currentProjectId.value = response.data.project_id
       projectData.value = response.data
       
-      // 更新URL（不刷新页面）
+      // 更新 URL（不重新整理頁面）
       router.replace({
         name: 'Process',
         params: { projectId: response.data.project_id }
       })
       
       ontologyProgress.value = null
+      console.log('[DEBUG] 本體生成成功，準備進入圖譜構建階段')
       
-      // 自动开始图谱构建
+      // 自動開始圖譜構建
       await startBuildGraph()
     } else {
-      error.value = response.error || '本体生成失败'
+      console.error('[DEBUG] 本體生成失敗回應:', response.error)
+      error.value = response.error || '本體生成失敗'
     }
   } catch (err) {
-    console.error('Handle new project error:', err)
-    error.value = '项目初始化失败: ' + (err.message || '未知错误')
+    console.error('[DEBUG] 捕獲到異常:', err)
+    error.value = '專案初始化失敗: ' + (err.message || '未知錯誤')
   } finally {
     loading.value = false
   }

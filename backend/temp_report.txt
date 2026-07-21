@@ -1,0 +1,635 @@
+def plan_outline(
+        self, 
+        progress_callback: Optional[Callable] = None
+    ) -> ReportOutline:
+        """
+        規劃報告大綱
+        
+        使用LLM分析模擬需求，規劃報告的目錄結構
+        
+        Args:
+            progress_callback: 進度回撥函式
+            
+        Returns:
+            ReportOutline: 報告大綱
+        """
+        logger.info(t('report.startPlanningOutline'))
+        
+        if progress_callback:
+            progress_callback("planning", 0, t('progress.analyzingRequirements'))
+        
+        # 首先獲取模擬上下文
+        context = self.zep_tools.get_simulation_context(
+            graph_id=self.graph_id,
+            simulation_requirement=self.simulation_requirement
+        )
+        
+        if progress_callback:
+            progress_callback("planning", 30, t('progress.generatingOutline'))
+        
+        system_prompt = f"{PLAN_SYSTEM_PROMPT}\n\n{get_language_instruction()}"
+        user_prompt = PLAN_USER_PROMPT_TEMPLATE.format(
+            simulation_requirement=self.simulation_requirement,
+            total_nodes=context.get('graph_statistics', {}).get('total_nodes', 0),
+            total_edges=context.get('graph_statistics', {}).get('total_edges', 0),
+            entity_types=list(context.get('graph_statistics', {}).get('entity_types', {}).keys()),
+            total_entities=context.get('total_entities', 0),
+            related_facts_json=json.dumps(context.get('related_facts', [])[:10], ensure_ascii=False, indent=2),
+        )
+
+        try:
+            response = self.llm.chat_json(
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.3
+            )
+            
+            if progress_callback:
+                progress_callback("planning", 80, t('progress.parsingOutline'))
+            
+            # 解析大綱
+            sections = []
+            for section_data in response.get("sections", []):
+                sections.append(ReportSection(
+                    title=section_data.get("title", ""),
+                    content=""
+                ))
+            
+            outline = ReportOutline(
+                title=response.get("title", "模擬分析報告"),
+                summary=response.get("summary", ""),
+                sections=sections
+            )
+            
+            if progress_callback:
+                progress_callback("planning", 100, t('progress.outlinePlanComplete'))
+            
+            logger.info(t('report.outlinePlanDone', count=len(sections)))
+            return outline
+            
+        except Exception as e:
+            logger.error(t('report.outlinePlanFailed', error=str(e)))
+            # 返回預設大綱（3個章節，作為fallback）
+            return ReportOutline(
+                title="未來預測報告",
+                summary="基於模擬預測的未來趨勢與風險分析",
+                sections=[
+                    ReportSection(title="預測場景與核心發現"),
+                    ReportSection(title="人群行為預測分析"),
+                    ReportSection(title="趨勢展望與風險提示")
+                ]
+            )
+---
+def _generate_section_react(
+        self, 
+        section: ReportSection,
+        outline: ReportOutline,
+        previous_sections: List[str],
+        progress_callback: Optional[Callable] = None,
+        section_index: int = 0
+    ) -> str:
+        """
+        使用ReACT模式生成單個章節內容
+        
+        ReACT迴圈：
+        1. Thought（思考）- 分析需要什麼資訊
+        2. Action（行動）- 呼叫工具獲取資訊
+        3. Observation（觀察）- 分析工具返回結果
+        4. 重複直到資訊足夠或達到最大次數
+        5. Final Answer（最終回答）- 生成章節內容
+        
+        Args:
+            section: 要生成的章節
+            outline: 完整大綱
+            previous_sections: 之前章節的內容（用於保持連貫性）
+            progress_callback: 進度回撥
+            section_index: 章節索引（用於日誌記錄）
+            
+        Returns:
+            章節內容（Markdown格式）
+        """
+        logger.info(t('report.reactGenerateSection', title=section.title))
+        
+        # 記錄章節開始日誌
+        if self.report_logger:
+            self.report_logger.log_section_start(section.title, section_index)
+        
+        system_prompt = SECTION_SYSTEM_PROMPT_TEMPLATE.format(
+            report_title=outline.title,
+            report_summary=outline.summary,
+            simulation_requirement=self.simulation_requirement,
+            section_title=section.title,
+            tools_description=self._get_tools_description(),
+        )
+        system_prompt = f"{system_prompt}\n\n{get_language_instruction()}"
+
+        # 構建使用者prompt - 每個已完成章節各傳入最大4000字
+        if previous_sections:
+            previous_parts = []
+            for sec in previous_sections:
+                # 每個章節最多4000字
+                truncated = sec[:4000] + "..." if len(sec) > 4000 else sec
+                previous_parts.append(truncated)
+            previous_content = "\n\n---\n\n".join(previous_parts)
+        else:
+            previous_content = "（這是第一個章節）"
+        
+        user_prompt = SECTION_USER_PROMPT_TEMPLATE.format(
+            previous_content=previous_content,
+            section_title=section.title,
+        )
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        
+        # ReACT迴圈
+        tool_calls_count = 0
+        max_iterations = 5  # 最大迭代輪數
+        min_tool_calls = 3  # 最少工具呼叫次數
+        conflict_retries = 0  # 工具呼叫與Final Answer同時出現的連續衝突次數
+        used_tools = set()  # 記錄已呼叫過的工具名
+        all_tools = {"insight_forge", "panorama_search", "quick_search", "interview_agents"}
+
+        # 報告上下文，用於InsightForge的子問題生成
+        report_context = f"章節標題: {section.title}\n模擬需求: {self.simulation_requirement}"
+        
+        for iteration in range(max_iterations):
+            if progress_callback:
+                progress_callback(
+                    "generating", 
+                    int((iteration / max_iterations) * 100),
+                    t('progress.deepSearchAndWrite', current=tool_calls_count, max=self.MAX_TOOL_CALLS_PER_SECTION)
+                )
+            
+            # 呼叫LLM
+            response = self.llm.chat(
+                messages=messages,
+                temperature=0.5,
+                max_tokens=2048
+            )
+
+            # 檢查 LLM 返回是否為 None（API 異常或內容為空）
+            if response is None:
+                logger.warning(t('report.sectionIterNone', title=section.title, iteration=iteration + 1))
+                # 如果還有迭代次數，新增訊息並重試
+                if iteration < max_iterations - 1:
+                    messages.append({"role": "assistant", "content": "（響應為空）"})
+                    messages.append({"role": "user", "content": "請繼續生成內容。"})
+                    continue
+                # 最後一次迭代也返回 None，跳出迴圈進入強制收尾
+                break
+
+            logger.debug(f"LLM響應: {response[:200]}...")
+
+            # 解析一次，複用結果
+            tool_calls = self._parse_tool_calls(response)
+            has_tool_calls = bool(tool_calls)
+            has_final_answer = "Final Answer:" in response
+
+            # ── 衝突處理：LLM 同時輸出了工具呼叫和 Final Answer ──
+            if has_tool_calls and has_final_answer:
+                conflict_retries += 1
+                logger.warning(
+                    t('report.sectionConflict', title=section.title, iteration=iteration+1, conflictCount=conflict_retries)
+                )
+
+                if conflict_retries <= 2:
+                    # 前兩次：丟棄本次響應，要求 LLM 重新回覆
+                    messages.append({"role": "assistant", "content": response})
+                    messages.append({
+                        "role": "user",
+                        "content": (
+                            "【格式錯誤】你在一次回覆中同時包含了工具呼叫和 Final Answer，這是不允許的。\n"
+                            "每次回覆只能做以下兩件事之一：\n"
+                            "- 呼叫一個工具（輸出一個 <tool_call> 塊，不要寫 Final Answer）\n"
+                            "- 輸出最終內容（以 'Final Answer:' 開頭，不要包含 <tool_call>）\n"
+                            "請重新回覆，只做其中一件事。"
+                        ),
+                    })
+                    continue
+                else:
+                    # 第三次：降級處理，截斷到第一個工具呼叫，強制執行
+                    logger.warning(
+                        t('report.sectionConflictDowngrade', title=section.title, conflictCount=conflict_retries)
+                    )
+                    first_tool_end = response.find('</tool_call>')
+                    if first_tool_end != -1:
+                        response = response[:first_tool_end + len('</tool_call>')]
+                        tool_calls = self._parse_tool_calls(response)
+                        has_tool_calls = bool(tool_calls)
+                    has_final_answer = False
+                    conflict_retries = 0
+
+            # 記錄 LLM 響應日誌
+            if self.report_logger:
+                self.report_logger.log_llm_response(
+                    section_title=section.title,
+                    section_index=section_index,
+                    response=response,
+                    iteration=iteration + 1,
+                    has_tool_calls=has_tool_calls,
+                    has_final_answer=has_final_answer
+                )
+
+            # ── 情況1：LLM 輸出了 Final Answer ──
+            if has_final_answer:
+                # 工具呼叫次數不足，拒絕並要求繼續調工具
+                if tool_calls_count < min_tool_calls:
+                    messages.append({"role": "assistant", "content": response})
+                    unused_tools = all_tools - used_tools
+                    unused_hint = f"（這些工具還未使用，推薦用一下他們: {', '.join(unused_tools)}）" if unused_tools else ""
+                    messages.append({
+                        "role": "user",
+                        "content": REACT_INSUFFICIENT_TOOLS_MSG.format(
+                            tool_calls_count=tool_calls_count,
+                            min_tool_calls=min_tool_calls,
+                            unused_hint=unused_hint,
+                        ),
+                    })
+                    continue
+
+                # 正常結束
+                final_answer = response.split("Final Answer:")[-1].strip()
+                logger.info(t('report.sectionGenDone', title=section.title, count=tool_calls_count))
+
+                if self.report_logger:
+                    self.report_logger.log_section_content(
+                        section_title=section.title,
+                        section_index=section_index,
+                        content=final_answer,
+                        tool_calls_count=tool_calls_count
+                    )
+                return final_answer
+
+            # ── 情況2：LLM 嘗試呼叫工具 ──
+            if has_tool_calls:
+                # 工具額度已耗盡 → 明確告知，要求輸出 Final Answer
+                if tool_calls_count >= self.MAX_TOOL_CALLS_PER_SECTION:
+                    messages.append({"role": "assistant", "content": response})
+                    messages.append({
+                        "role": "user",
+                        "content": REACT_TOOL_LIMIT_MSG.format(
+                            tool_calls_count=tool_calls_count,
+                            max_tool_calls=self.MAX_TOOL_CALLS_PER_SECTION,
+                        ),
+                    })
+                    continue
+
+                # 只執行第一個工具呼叫
+                call = tool_calls[0]
+                if len(tool_calls) > 1:
+                    logger.info(t('report.multiToolOnlyFirst', total=len(tool_calls), toolName=call['name']))
+
+                if self.report_logger:
+                    self.report_logger.log_tool_call(
+                        section_title=section.title,
+                        section_index=section_index,
+                        tool_name=call["name"],
+                        parameters=call.get("parameters", {}),
+                        iteration=iteration + 1
+                    )
+
+                result = self._execute_tool(
+                    call["name"],
+                    call.get("parameters", {}),
+                    report_context=report_context
+                )
+
+                if self.report_logger:
+                    self.report_logger.log_tool_result(
+                        section_title=section.title,
+                        section_index=section_index,
+                        tool_name=call["name"],
+                        result=result,
+                        iteration=iteration + 1
+                    )
+
+                # 限制 Observation 長度以防止 LLM 上下文長度超限
+                max_obs_length = 6000
+                display_result = result
+                if len(result) > max_obs_length:
+                    display_result = result[:max_obs_length] + f"\n\n... (內容過長，已截斷，僅顯示前 {max_obs_length} 字元) ..."
+
+                tool_calls_count += 1
+                used_tools.add(call['name'])
+
+                # 構建未使用工具提示
+                unused_tools = all_tools - used_tools
+                unused_hint = ""
+                if unused_tools and tool_calls_count < self.MAX_TOOL_CALLS_PER_SECTION:
+                    unused_hint = REACT_UNUSED_TOOLS_HINT.format(unused_list="、".join(unused_tools))
+
+                messages.append({"role": "assistant", "content": response})
+                messages.append({
+                    "role": "user",
+                    "content": REACT_OBSERVATION_TEMPLATE.format(
+                        tool_name=call["name"],
+                        result=display_result,
+                        tool_calls_count=tool_calls_count,
+                        max_tool_calls=self.MAX_TOOL_CALLS_PER_SECTION,
+                        used_tools_str=", ".join(used_tools),
+                        unused_hint=unused_hint,
+                    ),
+                })
+                continue
+
+            # ── 情況3：既沒有工具呼叫，也沒有 Final Answer ──
+            messages.append({"role": "assistant", "content": response})
+
+            if tool_calls_count < min_tool_calls:
+                # 工具呼叫次數不足，推薦未用過的工具
+                unused_tools = all_tools - used_tools
+                unused_hint = f"（這些工具還未使用，推薦用一下他們: {', '.join(unused_tools)}）" if unused_tools else ""
+
+                messages.append({
+                    "role": "user",
+                    "content": REACT_INSUFFICIENT_TOOLS_MSG_ALT.format(
+                        tool_calls_count=tool_calls_count,
+                        min_tool_calls=min_tool_calls,
+                        unused_hint=unused_hint,
+                    ),
+                })
+                continue
+
+            # 工具呼叫已足夠，LLM 輸出了內容但沒帶 "Final Answer:" 字首
+            # 直接將這段內容作為最終答案，不再空轉
+            logger.info(t('report.sectionNoPrefix', title=section.title, count=tool_calls_count))
+            final_answer = response.strip()
+
+            if self.report_logger:
+                self.report_logger.log_section_content(
+                    section_title=section.title,
+                    section_index=section_index,
+                    content=final_answer,
+                    tool_calls_count=tool_calls_count
+                )
+            return final_answer
+        
+        # 達到最大迭代次數，強制生成內容
+        logger.warning(t('report.sectionMaxIter', title=section.title))
+        messages.append({"role": "user", "content": REACT_FORCE_FINAL_MSG})
+        
+        response = self.llm.chat(
+            messages=messages,
+            temperature=0.5,
+            max_tokens=2048
+        )
+
+        # 檢查強制收尾時 LLM 返回是否為 None
+        if response is None:
+            logger.error(t('report.sectionForceFailed', title=section.title))
+            final_answer = t('report.sectionGenFailedContent')
+        elif "Final Answer:" in response:
+            final_answer = response.split("Final Answer:")[-1].strip()
+        else:
+            final_answer = response
+        
+        # 記錄章節內容生成完成日誌
+        if self.report_logger:
+            self.report_logger.log_section_content(
+                section_title=section.title,
+                section_index=section_index,
+                content=final_answer,
+                tool_calls_count=tool_calls_count
+            )
+        
+        return final_answer
+---
+def generate_report(
+        self, 
+        progress_callback: Optional[Callable[[str, int, str], None]] = None,
+        report_id: Optional[str] = None
+    ) -> Report:
+        """
+        生成完整報告（分章節實時輸出）
+        
+        每個章節生成完成後立即儲存到資料夾，不需要等待整個報告完成。
+        檔案結構：
+        reports/{report_id}/
+            meta.json       - 報告元資訊
+            outline.json    - 報告大綱
+            progress.json   - 生成進度
+            section_01.md   - 第1章節
+            section_02.md   - 第2章節
+            ...
+            full_report.md  - 完整報告
+        
+        Args:
+            progress_callback: 進度回撥函式 (stage, progress, message)
+            report_id: 報告ID（可選，如果不傳則自動生成）
+            
+        Returns:
+            Report: 完整報告
+        """
+        import uuid
+        
+        # 如果沒有傳入 report_id，則自動生成
+        if not report_id:
+            report_id = f"report_{uuid.uuid4().hex[:12]}"
+        start_time = datetime.now()
+        
+        report = Report(
+            report_id=report_id,
+            simulation_id=self.simulation_id,
+            graph_id=self.graph_id,
+            simulation_requirement=self.simulation_requirement,
+            status=ReportStatus.PENDING,
+            created_at=datetime.now().isoformat()
+        )
+        
+        # 已完成的章節標題列表（用於進度追蹤）
+        completed_section_titles = []
+        
+        try:
+            # 初始化：建立報告資料夾並儲存初始狀態
+            ReportManager._ensure_report_folder(report_id)
+            
+            # 初始化日誌記錄器（結構化日誌 agent_log.jsonl）
+            self.report_logger = ReportLogger(report_id)
+            self.report_logger.log_start(
+                simulation_id=self.simulation_id,
+                graph_id=self.graph_id,
+                simulation_requirement=self.simulation_requirement
+            )
+            
+            # 初始化控制檯日誌記錄器（console_log.txt）
+            self.console_logger = ReportConsoleLogger(report_id)
+            
+            ReportManager.update_progress(
+                report_id, "pending", 0, t('progress.initReport'),
+                completed_sections=[]
+            )
+            ReportManager.save_report(report)
+            
+            # 階段1: 規劃大綱
+            report.status = ReportStatus.PLANNING
+            ReportManager.update_progress(
+                report_id, "planning", 5, t('progress.startPlanningOutline'),
+                completed_sections=[]
+            )
+            
+            # 記錄規劃開始日誌
+            self.report_logger.log_planning_start()
+            
+            if progress_callback:
+                progress_callback("planning", 0, t('progress.startPlanningOutline'))
+            
+            outline = self.plan_outline(
+                progress_callback=lambda stage, prog, msg: 
+                    progress_callback(stage, prog // 5, msg) if progress_callback else None
+            )
+            report.outline = outline
+            
+            # 記錄規劃完成日誌
+            self.report_logger.log_planning_complete(outline.to_dict())
+            
+            # 儲存大綱到檔案
+            ReportManager.save_outline(report_id, outline)
+            ReportManager.update_progress(
+                report_id, "planning", 15, t('progress.outlineDone', count=len(outline.sections)),
+                completed_sections=[]
+            )
+            ReportManager.save_report(report)
+            
+            logger.info(t('report.outlineSavedToFile', reportId=report_id))
+            
+            # 階段2: 逐章節生成（分章節儲存）
+            report.status = ReportStatus.GENERATING
+            
+            total_sections = len(outline.sections)
+            generated_sections = []  # 儲存內容用於上下文
+            
+            for i, section in enumerate(outline.sections):
+                section_num = i + 1
+                base_progress = 20 + int((i / total_sections) * 70)
+                
+                # 更新進度
+                ReportManager.update_progress(
+                    report_id, "generating", base_progress,
+                    t('progress.generatingSection', title=section.title, current=section_num, total=total_sections),
+                    current_section=section.title,
+                    completed_sections=completed_section_titles
+                )
+
+                if progress_callback:
+                    progress_callback(
+                        "generating",
+                        base_progress,
+                        t('progress.generatingSection', title=section.title, current=section_num, total=total_sections)
+                    )
+                
+                # 生成主章節內容
+                section_content = self._generate_section_react(
+                    section=section,
+                    outline=outline,
+                    previous_sections=generated_sections,
+                    progress_callback=lambda stage, prog, msg:
+                        progress_callback(
+                            stage, 
+                            base_progress + int(prog * 0.7 / total_sections),
+                            msg
+                        ) if progress_callback else None,
+                    section_index=section_num
+                )
+                
+                section.content = section_content
+                generated_sections.append(f"## {section.title}\n\n{section_content}")
+
+                # 儲存章節
+                ReportManager.save_section(report_id, section_num, section)
+                completed_section_titles.append(section.title)
+
+                # 記錄章節完成日誌
+                full_section_content = f"## {section.title}\n\n{section_content}"
+
+                if self.report_logger:
+                    self.report_logger.log_section_full_complete(
+                        section_title=section.title,
+                        section_index=section_num,
+                        full_content=full_section_content.strip()
+                    )
+
+                logger.info(t('report.sectionSaved', reportId=report_id, sectionNum=f"{section_num:02d}"))
+                
+                # 更新進度
+                ReportManager.update_progress(
+                    report_id, "generating", 
+                    base_progress + int(70 / total_sections),
+                    t('progress.sectionDone', title=section.title),
+                    current_section=None,
+                    completed_sections=completed_section_titles
+                )
+            
+            # 階段3: 組裝完整報告
+            if progress_callback:
+                progress_callback("generating", 95, t('progress.assemblingReport'))
+            
+            ReportManager.update_progress(
+                report_id, "generating", 95, t('progress.assemblingReport'),
+                completed_sections=completed_section_titles
+            )
+            
+            # 使用ReportManager組裝完整報告
+            report.markdown_content = ReportManager.assemble_full_report(report_id, outline)
+            report.status = ReportStatus.COMPLETED
+            report.completed_at = datetime.now().isoformat()
+            
+            # 計算總耗時
+            total_time_seconds = (datetime.now() - start_time).total_seconds()
+            
+            # 記錄報告完成日誌
+            if self.report_logger:
+                self.report_logger.log_report_complete(
+                    total_sections=total_sections,
+                    total_time_seconds=total_time_seconds
+                )
+            
+            # 儲存最終報告
+            ReportManager.save_report(report)
+            ReportManager.update_progress(
+                report_id, "completed", 100, t('progress.reportComplete'),
+                completed_sections=completed_section_titles
+            )
+            
+            if progress_callback:
+                progress_callback("completed", 100, t('progress.reportComplete'))
+            
+            logger.info(t('report.reportGenDone', reportId=report_id))
+            
+            # 關閉控制檯日誌記錄器
+            if self.console_logger:
+                self.console_logger.close()
+                self.console_logger = None
+            
+            return report
+            
+        except Exception as e:
+            logger.error(t('report.reportGenFailed', error=str(e)))
+            report.status = ReportStatus.FAILED
+            report.error = str(e)
+            
+            # 記錄錯誤日誌
+            if self.report_logger:
+                self.report_logger.log_error(str(e), "failed")
+            
+            # 儲存失敗狀態
+            try:
+                ReportManager.save_report(report)
+                ReportManager.update_progress(
+                    report_id, "failed", -1, t('progress.reportFailed', error=str(e)),
+                    completed_sections=completed_section_titles
+                )
+            except Exception:
+                pass  # 忽略儲存失敗的錯誤
+            
+            # 關閉控制檯日誌記錄器
+            if self.console_logger:
+                self.console_logger.close()
+                self.console_logger = None
+            
+            return report
+---

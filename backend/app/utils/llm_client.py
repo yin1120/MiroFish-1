@@ -1,6 +1,6 @@
 """
-LLM客户端封装
-统一使用OpenAI格式调用
+LLM客戶端封裝
+統一使用OpenAI格式呼叫
 """
 
 import json
@@ -12,7 +12,7 @@ from ..config import Config
 
 
 class LLMClient:
-    """LLM客户端"""
+    """LLM客戶端"""
     
     def __init__(
         self,
@@ -29,7 +29,8 @@ class LLMClient:
         
         self.client = OpenAI(
             api_key=self.api_key,
-            base_url=self.base_url
+            base_url=self.base_url,
+            timeout=1800.0
         )
     
     def chat(
@@ -40,16 +41,16 @@ class LLMClient:
         response_format: Optional[Dict] = None
     ) -> str:
         """
-        发送聊天请求
+        傳送聊天請求
         
         Args:
-            messages: 消息列表
-            temperature: 温度参数
-            max_tokens: 最大token数
-            response_format: 响应格式（如JSON模式）
+            messages: 訊息列表
+            temperature: 溫度引數
+            max_tokens: 最大token數
+            response_format: 響應格式（如JSON模式）
             
         Returns:
-            模型响应文本
+            模型響應文字
         """
         kwargs = {
             "model": self.model,
@@ -63,7 +64,7 @@ class LLMClient:
         
         response = self.client.chat.completions.create(**kwargs)
         content = response.choices[0].message.content
-        # 部分模型（如MiniMax M2.5）会在content中包含<think>思考内容，需要移除
+        # 部分模型（如MiniMax M2.5）會在content中包含<think>思考內容，需要移除
         content = re.sub(r'<think>[\s\S]*?</think>', '', content).strip()
         return content
     
@@ -71,33 +72,52 @@ class LLMClient:
         self,
         messages: List[Dict[str, str]],
         temperature: float = 0.3,
-        max_tokens: int = 4096
+        max_tokens: int = 4096,
+        max_retries: int = 3
     ) -> Dict[str, Any]:
         """
-        发送聊天请求并返回JSON
+        傳送聊天請求並返回JSON
         
         Args:
-            messages: 消息列表
-            temperature: 温度参数
-            max_tokens: 最大token数
+            messages: 訊息列表
+            temperature: 溫度引數
+            max_tokens: 最大token數
+            max_retries: 最大重試次數
             
         Returns:
-            解析后的JSON对象
+            解析後的JSON物件
         """
-        response = self.chat(
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            response_format={"type": "json_object"}
-        )
-        # 清理markdown代码块标记
-        cleaned_response = response.strip()
-        cleaned_response = re.sub(r'^```(?:json)?\s*\n?', '', cleaned_response, flags=re.IGNORECASE)
-        cleaned_response = re.sub(r'\n?```\s*$', '', cleaned_response)
-        cleaned_response = cleaned_response.strip()
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                response = self.chat(
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    response_format={"type": "json_object"}
+                )
+            except Exception as e:
+                logger.warning(f"Attempt {attempt + 1}: LLM call failed or doesn't support json_object format: {e}. Retrying without response_format...")
+                response = self.chat(
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens
+                )
+            
+            # 清理markdown程式碼塊標記
+            cleaned_response = response.strip()
+            cleaned_response = re.sub(r'^```(?:json)?\s*\n?', '', cleaned_response, flags=re.IGNORECASE)
+            cleaned_response = re.sub(r'\n?```\s*$', '', cleaned_response)
+            cleaned_response = cleaned_response.strip()
 
-        try:
-            return json.loads(cleaned_response)
-        except json.JSONDecodeError:
-            raise ValueError(f"LLM返回的JSON格式无效: {cleaned_response}")
+            try:
+                return json.loads(cleaned_response)
+            except json.JSONDecodeError as e:
+                last_error = f"LLM返回的JSON格式無效: {cleaned_response}"
+                logger.warning(f"JSON parsing failed on attempt {attempt + 1}: {e}")
+                
+        raise ValueError(last_error)
 

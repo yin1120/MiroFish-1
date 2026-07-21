@@ -1,0 +1,75 @@
+def to_text(self) -> str:
+        """轉換為詳細的文字格式，供LLM理解"""
+        text_parts = [
+            f"## 未來預測深度分析",
+            f"分析問題: {self.query}",
+            f"預測場景: {self.simulation_requirement}",
+            f"\n### 預測資料統計",
+            f"- 相關預測事實: {self.total_facts}條",
+            f"- 涉及實體: {self.total_entities}個",
+            f"- 關係鏈: {self.total_relationships}條"
+        ]
+        
+        # 子問題
+        if self.sub_queries:
+            text_parts.append(f"\n### 分析的子問題")
+            for i, sq in enumerate(self.sub_queries, 1):
+                text_parts.append(f"{i}. {sq}")
+        
+        # 語義搜尋結果
+        if self.semantic_facts:
+            text_parts.append(f"\n### 【關鍵事實】(請在報告中引用這些原文)")
+            for i, fact in enumerate(self.semantic_facts, 1):
+                text_parts.append(f"{i}. \"{fact}\"")
+        
+        # 實體洞察
+        if self.entity_insights:
+            text_parts.append(f"\n### 【核心實體】")
+            for entity in self.entity_insights:
+                text_parts.append(f"- **{entity.get('name', '未知')}** ({entity.get('type', '實體')})")
+                if entity.get('summary'):
+                    text_parts.append(f"  摘要: \"{entity.get('summary')}\"")
+                if entity.get('related_facts'):
+                    text_parts.append(f"  相關事實: {len(entity.get('related_facts', []))}條")
+        
+        # 關係鏈
+        if self.relationship_chains:
+            text_parts.append(f"\n### 【關係鏈】")
+            for chain in self.relationship_chains:
+                text_parts.append(f"- {chain}")
+        
+        return "\n".join(text_parts)
+---
+def to_text(self) -> str:
+        """轉換為文字格式（完整版本，不截斷）"""
+        text_parts = [
+            f"## 廣度搜尋結果（未來全景檢視）",
+            f"查詢: {self.query}",
+            f"\n### 統計資訊",
+            f"- 總節點數: {self.total_nodes}",
+            f"- 總邊數: {self.total_edges}",
+            f"- 當前有效事實: {self.active_count}條",
+            f"- 歷史/過期事實: {self.historical_count}條"
+        ]
+        
+        # 當前有效的事實（完整輸出，不截斷）
+        if self.active_facts:
+            text_parts.append(f"\n### 【當前有效事實】(模擬結果原文)")
+            for i, fact in enumerate(self.active_facts, 1):
+                text_parts.append(f"{i}. \"{fact}\"")
+        
+        # 歷史/過期事實（完整輸出，不截斷）
+        if self.historical_facts:
+            text_parts.append(f"\n### 【歷史/過期事實】(演變過程記錄)")
+            for i, fact in enumerate(self.historical_facts, 1):
+                text_parts.append(f"{i}. \"{fact}\"")
+        
+        # 關鍵實體（完整輸出，不截斷）
+        if self.all_nodes:
+            text_parts.append(f"\n### 【涉及實體】")
+            for node in self.all_nodes:
+                entity_type = next((l for l in node.labels if l not in ["Entity", "Node"]), "實體")
+                text_parts.append(f"- **{node.name}** ({entity_type})")
+        
+        return "\n".join(text_parts)
+---
