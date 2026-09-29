@@ -58,14 +58,17 @@ class AgentActivity:
         describe_func = action_descriptions.get(self.action_type, self._describe_generic)
         description = describe_func()
         
-        # 直接返回 "agent名稱: 活動描述" 格式，不新增模擬字首
-        return f"{self.agent_name}: {description}"
+        # 返回 "【模擬第 X 輪】agent名稱於模擬推演第 X 輪中: 活動描述" 格式，使圖譜知識與 Zep 三元組天然具備明確時間輪次錨點
+        r_str = f"第 {self.round_num} 輪" if hasattr(self, 'round_num') and self.round_num is not None else ""
+        round_prefix = f"【模擬{r_str}】" if r_str else ""
+        time_anchor = f"在社群模擬推演{r_str}中，" if r_str else ""
+        return f"{round_prefix}{time_anchor}{self.agent_name}: {description}"
     
     def _describe_create_post(self) -> str:
         content = self.action_args.get("content", "")
         if content:
-            return f"釋出了一條帖子：「{content}」"
-        return "釋出了一條帖子"
+            return f"發表觀點表示：「{content}」。因為 {self.agent_name} 是代表其所屬主體的官方代表，此發言直接代表了其所屬國家或組織的立場。"
+        return "發表了觀點"
     
     def _describe_like_post(self) -> str:
         """點贊帖子 - 包含帖子原文和作者資訊"""
@@ -123,7 +126,7 @@ class AgentActivity:
             base = "引用了一條帖子"
         
         if quote_content:
-            base += f"，並評論道：「{quote_content}」"
+            base += f"，並發表觀點表示：「{quote_content}」。因為 {self.agent_name} 是代表其所屬主體的官方代表，此觀點直接代表了其所屬國家或組織的立場。"
         return base
     
     def _describe_follow(self) -> str:
@@ -142,12 +145,12 @@ class AgentActivity:
         
         if content:
             if post_content and post_author:
-                return f"在{post_author}的帖子「{post_content}」下評論道：「{content}」"
+                return f"在{post_author}的帖子「{post_content}」下發表觀點表示：「{content}」。因為 {self.agent_name} 是代表其所屬主體的官方代表，此觀點直接代表了其所屬國家或組織的立場。"
             elif post_content:
-                return f"在帖子「{post_content}」下評論道：「{content}」"
+                return f"在帖子「{post_content}」下發表觀點表示：「{content}」。因為 {self.agent_name} 是代表其所屬主體的官方代表，此觀點直接代表了其所屬國家或組織的立場。"
             elif post_author:
-                return f"在{post_author}的帖子下評論道：「{content}」"
-            return f"評論道：「{content}」"
+                return f"在{post_author}的帖子下發表觀點表示：「{content}」。因為 {self.agent_name} 是代表其所屬主體的官方代表，此觀點直接代表了其所屬國家或組織的立場。"
+            return f"發表觀點表示：「{content}」。因為 {self.agent_name} 是代表其所屬主體的官方代表，此觀點直接代表了其所屬國家或組織的立場。"
         return "發表了評論"
     
     def _describe_like_comment(self) -> str:

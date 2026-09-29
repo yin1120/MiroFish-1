@@ -315,8 +315,9 @@ class SimulationRunner:
         simulation_id: str,
         platform: str = "parallel",  # twitter / reddit / parallel
         max_rounds: int = None,  # 最大模擬輪數（可選，用於截斷過長的模擬）
-        enable_graph_memory_update: bool = False,  # 是否將活動更新到Zep圖譜
-        graph_id: str = None  # Zep圖譜ID（啟用圖譜更新時必需）
+        enable_graph_memory_update: bool = None,  # 是否將活動更新到Zep圖譜 (自適應，預設None)
+        graph_id: str = None,  # Zep圖譜ID（啟用圖譜更新時必需）
+        force: bool = False  # 是否強制重啟（若為 True 或程序已死亡則自動清理殘留狀態）
     ) -> SimulationRunState:
         """
         啟動模擬
@@ -327,6 +328,7 @@ class SimulationRunner:
             max_rounds: 最大模擬輪數（可選，用於截斷過長的模擬）
             enable_graph_memory_update: 是否將Agent活動動態更新到Zep圖譜
             graph_id: Zep圖譜ID（啟用圖譜更新時必需）
+            force: 是否強制重啟
             
         Returns:
             SimulationRunState
@@ -334,7 +336,33 @@ class SimulationRunner:
         # 檢查是否已在執行
         existing = cls.get_run_state(simulation_id)
         if existing and existing.runner_status in [RunnerStatus.RUNNING, RunnerStatus.STARTING]:
-            raise ValueError(f"模擬已在執行中: {simulation_id}")
+            # 檢查底層程序是否真正存活
+            is_alive = False
+            proc = cls._processes.get(simulation_id)
+            if proc is not None:
+                is_alive = (proc.poll() is None)
+            elif existing.process_pid:
+                try:
+                    import psutil
+                    is_alive = psutil.pid_exists(existing.process_pid)
+                except Exception:
+                    is_alive = False
+
+            if is_alive and not force:
+                raise ValueError(f"模擬已在執行中: {simulation_id}")
+
+            logger.warning(
+                f"模擬 {simulation_id} 處於 {existing.runner_status.value} 狀態 "
+                f"(is_alive={is_alive}, force={force})，自動進行殘留狀態重置清理。"
+            )
+            try:
+                cls.stop_simulation(simulation_id)
+            except Exception as e_stop:
+                logger.debug(f"stop_simulation 異常忽略: {e_stop}")
+                existing.runner_status = RunnerStatus.STOPPED
+                existing.twitter_running = False
+                existing.reddit_running = False
+                cls._save_run_state(existing)
         
         # 載入模擬配置
         sim_dir = os.path.join(cls.RUN_STATE_DIR, simulation_id)
@@ -359,6 +387,27 @@ class SimulationRunner:
             if total_rounds < original_rounds:
                 logger.info(f"輪數已截斷: {original_rounds} -> {total_rounds} (max_rounds={max_rounds})")
         
+        # 自適應預設值判斷
+        if enable_graph_memory_update is None:
+            enable_graph_memory_update = bool(graph_id)
+            
+        # 如果啟用圖譜記憶更新，建立更新器
+        if enable_graph_memory_update:
+            if not graph_id:
+                logger.warning(f"啟用圖譜記憶更新但沒有提供 graph_id，自動降級關閉圖譜更新。 simulation_id={simulation_id}")
+                enable_graph_memory_update = False
+                cls._graph_memory_enabled[simulation_id] = False
+            else:
+                try:
+                    ZepGraphMemoryManager.create_updater(simulation_id, graph_id)
+                    cls._graph_memory_enabled[simulation_id] = True
+                    logger.info(f"已啟用圖譜記憶更新 simulation_id={simulation_id}, graph_id={graph_id}")
+                except Exception as e:
+                    logger.error(f"建立圖譜記憶更新器失敗: {e}")
+                    cls._graph_memory_enabled[simulation_id] = False
+        else:
+            cls._graph_memory_enabled[simulation_id] = False
+        
         state = SimulationRunState(
             simulation_id=simulation_id,
             runner_status=RunnerStatus.STARTING,
@@ -368,21 +417,6 @@ class SimulationRunner:
         )
         
         cls._save_run_state(state)
-        
-        # 如果啟用圖譜記憶更新，建立更新器
-        if enable_graph_memory_update:
-            if not graph_id:
-                raise ValueError("啟用圖譜記憶更新時必須提供 graph_id")
-            
-            try:
-                ZepGraphMemoryManager.create_updater(simulation_id, graph_id)
-                cls._graph_memory_enabled[simulation_id] = True
-                logger.info(f"已啟用圖譜記憶更新: simulation_id={simulation_id}, graph_id={graph_id}")
-            except Exception as e:
-                logger.error(f"建立圖譜記憶更新器失敗: {e}")
-                cls._graph_memory_enabled[simulation_id] = False
-        else:
-            cls._graph_memory_enabled[simulation_id] = False
         
         # 確定執行哪個指令碼（指令碼位於 backend/scripts/ 目錄）
         if platform == "twitter":
@@ -1766,3 +1800,14 @@ class SimulationRunner:
         
         return results
 
+
+def _cleanup_all_active_simulations():
+    """當後端伺服器關閉或退出時，自動強制終止所有仍在運行的推演進程樹，防止孤兒進程在背景殘留"""
+    for sim_id, proc in list(SimulationRunner._processes.items()):
+        try:
+            if proc and proc.poll() is None:
+                SimulationRunner._terminate_process(proc, sim_id, timeout=3)
+        except Exception:
+            pass
+
+atexit.register(_cleanup_all_active_simulations)

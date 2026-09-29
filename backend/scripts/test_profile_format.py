@@ -37,12 +37,12 @@ def test_profile_formats():
             statuses_count=500,
             age=25,
             gender="male",
-            mbti="INTJ",
             country="China",
             profession="Student",
             interested_topics=["Technology", "Education"],
             source_entity_uuid="test-uuid-123",
             source_entity_type="Student",
+            current_motivation="想去救外婆的即時動機",
         ),
         OasisAgentProfile(
             user_id=1,
@@ -111,7 +111,7 @@ def test_profile_formats():
         
         # 验证详细格式字段
         required_reddit_fields = ['realname', 'username', 'bio', 'persona']
-        optional_reddit_fields = ['age', 'gender', 'mbti', 'country', 'profession', 'interested_topics']
+        optional_reddit_fields = ['age', 'gender', 'country', 'profession', 'interested_topics']
         
         missing = set(required_reddit_fields) - set(reddit_data[0].keys())
         if missing:
@@ -150,7 +150,6 @@ def show_expected_formats():
             "persona": "James is a seasoned professional in the Hospitality & Tourism industry...",
             "age": 40,
             "gender": "male",
-            "mbti": "ESTJ",
             "country": "UK",
             "profession": "Hospitality & Tourism",
             "interested_topics": ["Economics", "Business"]

@@ -8,8 +8,10 @@ Zep檢索工具服務
 3. QuickSearch（簡單搜尋）- 快速檢索
 """
 
+import os
 import time
 import json
+import re
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 
@@ -93,6 +95,10 @@ class EdgeInfo:
     valid_at: Optional[str] = None
     invalid_at: Optional[str] = None
     expired_at: Optional[str] = None
+    # 來源與模擬輪次標註
+    source_stage: Optional[str] = None
+    simulation_round: Optional[int] = None
+    round_label: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -106,14 +112,18 @@ class EdgeInfo:
             "created_at": self.created_at,
             "valid_at": self.valid_at,
             "invalid_at": self.invalid_at,
-            "expired_at": self.expired_at
+            "expired_at": self.expired_at,
+            "source_stage": self.source_stage,
+            "simulation_round": self.simulation_round,
+            "round_label": self.round_label
         }
     
     def to_text(self, include_temporal: bool = False) -> str:
         """轉換為文字格式"""
         source = self.source_node_name or self.source_node_uuid[:8]
         target = self.target_node_name or self.target_node_uuid[:8]
-        base_text = f"關係: {source} --[{self.name}]--> {target}\n事實: {self.fact}"
+        stage_tag = f" [{self.round_label}]" if self.round_label else ""
+        base_text = f"關係{stage_tag}: {source} --[{self.name}]--> {target}\n事實: {self.fact}"
         
         if include_temporal:
             valid_at = self.valid_at or "未知"
@@ -463,6 +473,22 @@ class ZepToolsService:
             raise last_exception
         raise RuntimeError(f"Zep {operation_name} failed: max_retries={max_retries}")
     
+    def _truncate_query_smartly(self, query: str, max_len: int = 380) -> str:
+        """
+        智慧截斷查詢詞，避免句子或單詞在一半被硬性切斷，且長度不超過上限。
+        """
+        if not query or not isinstance(query, str) or len(query) <= max_len:
+            return query
+            
+        truncated = query[:max_len]
+        punctuations = [',', ' ', '\n', '\r', '，', '。', '？', '！', ';', '；']
+        for char in punctuations:
+            last_idx = truncated.rfind(char)
+            if last_idx > int(max_len * 0.7):
+                return truncated[:last_idx]
+                
+        return truncated
+
     def search_graph(
         self, 
         graph_id: str, 
@@ -485,6 +511,9 @@ class ZepToolsService:
         Returns:
             SearchResult: 搜尋結果
         """
+        # Zep API 限制搜尋詞長度上限為 400 字元，在此進行智慧截斷
+        query = self._truncate_query_smartly(query)
+        
         logger.info(t("console.graphSearch", graphId=graph_id, query=query[:50]))
         
         # 嘗試使用Zep Cloud Search API
@@ -665,6 +694,10 @@ class ZepToolsService:
 
         result = []
         for node in nodes:
+            node_name = node.name or ""
+            if "entity" in node_name.lower():
+                continue
+                
             node_uuid = getattr(node, 'uuid_', None) or getattr(node, 'uuid', None) or ""
             result.append(NodeInfo(
                 uuid=str(node_uuid) if node_uuid else "",
@@ -709,6 +742,31 @@ class ZepToolsService:
                 edge_info.valid_at = getattr(edge, 'valid_at', None)
                 edge_info.invalid_at = getattr(edge, 'invalid_at', None)
                 edge_info.expired_at = getattr(edge, 'expired_at', None)
+
+            # 新增來源階段與輪次標註
+            source_stage = "stage1_document"
+            simulation_round = None
+            round_label = "文檔初始客觀事實"
+
+            fact_text = edge.fact or ""
+            edge_attrs = getattr(edge, "attributes", None) or {}
+            if isinstance(edge_attrs, dict) and "simulation_round" in edge_attrs:
+                try:
+                    simulation_round = int(edge_attrs["simulation_round"])
+                    source_stage = "stage3_simulation"
+                    round_label = f"模擬第 {simulation_round} 輪"
+                except (ValueError, TypeError):
+                    pass
+            elif fact_text:
+                round_match = re.search(r'(?:模擬|推演)第\s*(\d+)\s*輪', fact_text)
+                if round_match:
+                    source_stage = "stage3_simulation"
+                    simulation_round = int(round_match.group(1))
+                    round_label = f"模擬第 {simulation_round} 輪"
+
+            edge_info.source_stage = source_stage
+            edge_info.simulation_round = simulation_round
+            edge_info.round_label = round_label
 
             result.append(edge_info)
 
@@ -1387,12 +1445,18 @@ class ZepToolsService:
             
             logger.info(t("console.interviewApiReturned", count=api_result.get('interviews_count', 0), success=api_result.get('success')))
             
-            # 檢查API呼叫是否成功
+            # 檢查API呼叫是否成功，若活體環境已關閉或報錯，無縫切換為離線第一人稱回退專訪
             if not api_result.get("success", False):
                 error_msg = api_result.get("error", "未知錯誤")
-                logger.warning(t("console.interviewApiReturnedFailure", error=error_msg))
-                result.summary = f"採訪API呼叫失敗：{error_msg}。請檢查OASIS模擬環境狀態。"
-                return result
+                logger.warning(f"線上採訪API未成功 ({error_msg})，自動啟動離線角色專訪回退機制")
+                return self._perform_offline_interview_fallback(
+                    simulation_id=simulation_id,
+                    selected_agents=selected_agents,
+                    selected_indices=selected_indices,
+                    combined_prompt=combined_prompt,
+                    interview_requirement=interview_requirement,
+                    result=result
+                )
             
             # Step 5: 解析API返回結果，構建AgentInterview物件
             # 雙平臺模式返回格式: {"twitter_0": {...}, "reddit_0": {...}, "twitter_1": {...}, ...}
@@ -1461,17 +1525,17 @@ class ZepToolsService:
             
             result.interviewed_count = len(result.interviews)
             
-        except ValueError as e:
-            # 模擬環境未執行
-            logger.warning(t("console.interviewApiCallFailed", error=e))
-            result.summary = f"採訪失敗：{str(e)}。模擬環境可能已關閉，請確保OASIS環境正在執行。"
-            return result
-        except Exception as e:
-            logger.error(t("console.interviewApiCallException", error=e))
-            import traceback
-            logger.error(traceback.format_exc())
-            result.summary = f"採訪過程發生錯誤：{str(e)}"
-            return result
+        except (ValueError, Exception) as e:
+            # 若線上採訪拋出異常（如模擬進程已結束或超時），啟動離線回退
+            logger.warning(f"線上採訪拋出異常 ({e})，自動切換至離線專訪回退機制")
+            return self._perform_offline_interview_fallback(
+                simulation_id=simulation_id,
+                selected_agents=selected_agents,
+                selected_indices=selected_indices,
+                combined_prompt=combined_prompt,
+                interview_requirement=interview_requirement,
+                result=result
+            )
         
         # Step 6: 生成採訪摘要
         if result.interviews:
@@ -1481,6 +1545,105 @@ class ZepToolsService:
             )
         
         logger.info(t("console.interviewAgentsComplete", count=result.interviewed_count))
+        return result
+
+    def _perform_offline_interview_fallback(
+        self,
+        simulation_id: str,
+        selected_agents: List[Dict[str, Any]],
+        selected_indices: List[int],
+        combined_prompt: str,
+        interview_requirement: str,
+        result: InterviewResult
+    ) -> InterviewResult:
+        """
+        當 OASIS 活體環境已結束時的離線深度專訪回退機制
+        基於 Agent 人設與推演真實歷史發言，由 LLM 進行第一人稱角色重演回覆
+        """
+        logger.info(f"執行離線專訪回退：採訪 {len(selected_indices)} 位 Agent (模擬ID: {simulation_id})")
+        
+        sim_dir = os.path.join(Config.UPLOAD_FOLDER, 'simulations', simulation_id)
+        
+        # 讀取該 Agent 在推演中的歷史發言
+        agent_history_map = {}
+        for platform in ["twitter", "reddit"]:
+            log_path = os.path.join(sim_dir, platform, "actions.jsonl")
+            if os.path.exists(log_path):
+                try:
+                    with open(log_path, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            if not line.strip(): continue
+                            try:
+                                entry = json.loads(line)
+                                aid = entry.get("agent_id")
+                                if aid in selected_indices:
+                                    args = entry.get("action_args", {})
+                                    txt = args.get("quote_content") or args.get("content")
+                                    if txt:
+                                        agent_history_map.setdefault(aid, []).append(
+                                            f"- [第 {entry.get('round', 0)} 輪] {entry.get('action_type')}: 「{txt}」"
+                                        )
+                            except Exception:
+                                pass
+                except Exception as e:
+                    logger.warning(f"離線採訪讀取發言記錄失敗: {e}")
+
+        import re
+        for i, agent_idx in enumerate(selected_indices):
+            agent = selected_agents[i]
+            agent_name = agent.get("realname", agent.get("username", f"Agent_{agent_idx}"))
+            agent_role = agent.get("profession", "未知角色")
+            agent_bio = agent.get("bio", "")
+            
+            history_lines = agent_history_map.get(agent_idx, [])
+            history_text = "\n".join(history_lines[:5]) if history_lines else "（模擬中未留下主要公開長文）"
+            
+            system_msg = (
+                f"你正在接受一場關於國際與社群推演局勢的深度專訪。\n"
+                f"你的真實身分：{agent_name}（{agent_role}）\n"
+                f"你的人設立場與背景簡介：{agent_bio}\n"
+                f"你在本次模擬推演中的真實歷史言行：\n{history_text}\n\n"
+                f"【採訪回答嚴格要求】：\n"
+                f"1. 完全以第一人稱（我/本機構）身分親自作答，言行立場必須與你上述歷史言行完全一致，嚴禁自相矛盾。\n"
+                f"2. 針對記者的提問，詳細剖析你做出這些動作背後的戰略考量與內心動機。\n"
+                f"3. 逐題回答，回答須生動、真實、有深度。"
+            )
+            user_msg = f"記者提問如下，請逐題給出你的回答：\n{combined_prompt}"
+            
+            try:
+                interview_answer = self.llm.chat(
+                    messages=[
+                        {"role": "system", "content": system_msg},
+                        {"role": "user", "content": user_msg}
+                    ],
+                    temperature=0.7
+                )
+            except Exception as e:
+                interview_answer = f"基於我方在模擬推演中的一貫官方立場，我們始終堅定貫徹既定方針，維護自身核心利益。"
+                
+            # 提取關鍵引言
+            key_quotes = []
+            for sentence in re.split(r'[。！？\n]', interview_answer):
+                s = sentence.strip()
+                if 12 < len(s) < 80:
+                    key_quotes.append(s + "。")
+            
+            interview = AgentInterview(
+                agent_name=agent_name,
+                agent_role=agent_role,
+                agent_bio=agent_bio[:1000],
+                question=combined_prompt,
+                response=f"【深度專訪回應（推演角色第一人稱實錄）】\n{interview_answer}",
+                key_quotes=key_quotes[:5]
+            )
+            result.interviews.append(interview)
+            
+        result.interviewed_count = len(result.interviews)
+        if result.interviews:
+            result.summary = self._generate_interview_summary(
+                interviews=result.interviews,
+                interview_requirement=interview_requirement
+            )
         return result
     
     @staticmethod

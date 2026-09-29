@@ -13,7 +13,7 @@ import os
 import json
 import time
 import re
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, List, Optional, Callable, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -550,43 +550,40 @@ TOOL_DESC_INTERVIEW_AGENTS = """\
 # ── 大綱規劃 prompt ──
 
 PLAN_SYSTEM_PROMPT = """\
-你是一個「未來預測報告」的撰寫專家，擁有對模擬世界的「上帝視角」——你可以洞察模擬中每一位Agent的行為、言論和互動。
+你是一個「未來推演與推演報告」的架構專家，擁有對模擬世界的「上帝視角」——你可以洞察模擬中每一位Agent在不同時間輪次（Round）中的行為、言論和互動。
 
 【核心理念】
-我們構建了一個模擬世界，並向其中注入了特定的「模擬需求」作為變數。模擬世界的演化結果，就是對未來可能發生情況的預測。你正在觀察的不是"實驗資料"，而是"未來的預演"。
+我們構建了一個模擬世界，並向其中注入了特定的「模擬需求」與「突發劇本事件」。模擬世界的演化結果，是一場帶有清晰因果鏈與時間序的故事推演。你正在觀察的是未來的預演，必須展現出事件如何一步步激化、各方如何陣營撕裂、連鎖反應如何爆發的「動態故事推演感」。
 
 【你的任務】
-撰寫一份「未來預測報告」，回答：
-1. 在我們設定的條件下，未來發生了什麼？
-2. 各類Agent（人群）是如何反應和行動？
-3. 這個模擬揭示了哪些值得關注的未來趨勢和風險？
-
-【報告定位】
-- ✅ 這是一份基於模擬的未來預測報告，揭示"如果這樣，未來會怎樣"
-- ✅ 聚焦於預測結果：事件走向、群體反應、湧現現象、潛在風險
-- ✅ 模擬世界中的Agent言行就是對未來人群行為的預測
-- ❌ 不是對現實世界現狀的分析
-- ❌ 不是泛泛而談的輿情綜述
+根據【模擬預測到的部分未來事實樣本】中的時間輪次（Round）脈絡，撰寫一份具有強烈「時間推演感」與「事件演化感」的未來推演報告大綱：
+1. 時間順序推進：嚴格按照模擬輪次的演進順序（從初始狀態 ➔ 關鍵轉折點 ➔ 全球連鎖震盪 ➔ 終局平衡）劃分章節。
+2. 聚焦動態衝突：點明重大黑天鵝事件在第幾輪爆發、各方主力角色（如政府、意見領袖、民眾）如何選邊與反擊。
+3. 四幕劇敘事骨架：
+   - 第一章：初始博弈與序幕暗湧（初始輪次）—— 各方初期訴求與立場。
+   - 第二章：黑天鵝突襲與關鍵轉折（重大突發事件輪次，如第 13~18 輪）—— 劇變爆發引發的外交海嘯。
+   - 第三章：陣營撕裂與連鎖攻防（事件發酵輪次，如第 19~30 輪）—— 盟友質疑、輿論極端化與跨國博弈。
+   - 第四章：終局態勢與深遠預測（終盤輪次及未來預測，如第 31~40 輪）—— 新秩序定型與長遠風險預警。
+   （註：可依據實際推演豐富度規劃 3 至 5 個章節，每個章節標題必須包含時間輪次或推演階段標籤，例如「第二幕：黑天鵝突發（第 13~18 輪）—— 美國倒戈與外交海嘯」）
 
 【章節數量限制】
-- 最少2個章節，最多5個章節
-- 不需要子章節，每個章節直接撰寫完整內容
-- 內容要精煉，聚焦於核心預測發現
-- 章節結構由你根據預測結果自主設計
+- 最少 3 個章節，最多 5 個章節
+- 每個章節標題必須標明推演時間跨度（如「第 1~12 輪」或「前期」）
+- 內容要精煉，聚焦於推演過程中的因果與關鍵爆發點
 
 請輸出JSON格式的報告大綱，格式如下：
 {
-    "title": "報告標題",
-    "summary": "報告摘要（一句話概括核心預測發現）",
+    "title": "報告標題（具有故事推演感的震撼標題）",
+    "summary": "報告摘要（概括整個推演故事的核心轉折與最終走向）",
     "sections": [
         {
-            "title": "章節標題",
-            "description": "章節內容描述"
+            "title": "章節標題（必須帶有階段或輪次標籤，如：第一幕：暗流湧動（第 1~12 輪）—— 初始博弈與官方立場）",
+            "description": "章節內容描述（說明本章節重點推演的事件、角色與因果關係）"
         }
     ]
 }
 
-注意：sections陣列最少2個，最多5個元素！"""
+注意：sections陣列最少3個，最多5個元素！"""
 
 PLAN_USER_PROMPT_TEMPLATE = """\
 【預測場景設定】
@@ -774,11 +771,15 @@ SECTION_USER_PROMPT_TEMPLATE = """\
 【當前任務】撰寫章節: {section_title}
 ═══════════════════════════════════════════════════════════════
 
+【模擬時間軸事件紀實（本章節的時間序推演骨架）】：
+{timeline_context}
+
 【重要提醒】
 1. 仔細閱讀上方已完成的章節，避免重複相同的內容！
-2. 開始前必須先呼叫工具獲取模擬資料
-3. 請混合使用不同工具，不要只用一種
-4. 報告內容必須來自檢索結果，不要使用自己的知識
+2. 緊扣上方【模擬時間軸事件紀實】，嚴格依據時間輪次（Round）推進情節敘事，展現事態升級與因果連鎖！
+3. 開始前必須先呼叫工具獲取模擬資料與深度圖譜細節
+4. 請混合使用不同工具，不要只用一種
+5. 報告內容必須來自檢索結果與時間軸，不要使用自己的知識
 
 【⚠️ 格式警告 - 必須遵守】
 - ❌ 不要寫任何標題（#、##、###、####都不行）
@@ -1134,6 +1135,260 @@ class ReportAgent:
                 desc_parts.append(f"  引數: {params_desc}")
         return "\n".join(desc_parts)
     
+    def _get_simulation_actions(self) -> List[Dict[str, Any]]:
+        """讀取模擬對話歷史與讚踩轉發統計"""
+        if not self.simulation_id:
+            return []
+            
+        sim_dir = os.path.join("backend/uploads/simulations", self.simulation_id)
+        if not os.path.exists(sim_dir):
+            return []
+            
+        actions = []
+        import sqlite3
+        
+        # 連線 SQLite
+        reddit_db = os.path.join(sim_dir, "reddit_simulation.db")
+        twitter_db = os.path.join(sim_dir, "twitter_simulation.db")
+        
+        reddit_conn = sqlite3.connect(reddit_db) if os.path.exists(reddit_db) else None
+        twitter_conn = sqlite3.connect(twitter_db) if os.path.exists(twitter_db) else None
+        
+        def query_stats(conn, table, item_id, id_col):
+            if not conn:
+                return 0, 0, 0
+            try:
+                cursor = conn.cursor()
+                if table == "post":
+                    cursor.execute(f"SELECT num_likes, num_dislikes, num_shares FROM post WHERE {id_col} = ?", (item_id,))
+                    row = cursor.fetchone()
+                    if row:
+                        return row[0] or 0, row[1] or 0, row[2] or 0
+                else:
+                    cursor.execute(f"SELECT num_likes, num_dislikes FROM comment WHERE {id_col} = ?", (item_id,))
+                    row = cursor.fetchone()
+                    if row:
+                        return row[0] or 0, row[1] or 0, 0
+            except Exception:
+                pass
+            return 0, 0, 0
+
+        # 分別讀取 reddit 和 twitter 的 actions.jsonl
+        for platform in ["reddit", "twitter"]:
+            log_path = os.path.join(sim_dir, platform, "actions.jsonl")
+            if not os.path.exists(log_path):
+                continue
+                
+            conn = reddit_conn if platform == "reddit" else twitter_conn
+            
+            try:
+                with open(log_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if not line.strip():
+                            continue
+                        try:
+                            entry = json.loads(line)
+                            action_type = entry.get("action_type")
+                            
+                            # 讀取發言或轉發行為
+                            if action_type in ["CREATE_POST", "CREATE_COMMENT", "REPOST", "QUOTE_POST"]:
+                                action_args = entry.get("action_args", {})
+                                content_str = action_args.get("quote_content") or action_args.get("content", "")
+                                
+                                # 對於 repost，它沒有 content
+                                if not content_str and action_type != "REPOST":
+                                    continue
+                                    
+                                item_id = action_args.get("post_id") or action_args.get("comment_id")
+                                id_col = "post_id" if "post_id" in action_args else "comment_id"
+                                
+                                # 查詢 SQLite 讚踩
+                                num_likes, num_dislikes, num_shares = 0, 0, 0
+                                if item_id is not None:
+                                    table = "post" if id_col == "post_id" else "comment"
+                                    num_likes, num_dislikes, num_shares = query_stats(conn, table, item_id, id_col)
+                                    
+                                actions.append({
+                                    "round": entry.get("round", 0),
+                                    "timestamp": entry.get("timestamp", ""),
+                                    "platform": "Reddit" if platform == "reddit" else "Twitter",
+                                    "agent_name": entry.get("agent_name", ""),
+                                    "action_type": action_type,
+                                    "content": content_str,
+                                    "num_likes": num_likes,
+                                    "num_dislikes": num_dislikes,
+                                    "num_shares": num_shares,
+                                    "action_args": action_args
+                                })
+                        except Exception:
+                            pass
+            except Exception as e:
+                logger.error(f"讀取 {platform} actions.jsonl 失敗: {e}")
+                
+        if reddit_conn: reddit_conn.close()
+        if twitter_conn: twitter_conn.close()
+        
+        # 依照 round 排序，如果 round 相同，依照 timestamp 排序
+        actions.sort(key=lambda x: (x["round"], x["timestamp"]))
+        return actions
+
+    def _get_sorted_timeline_events(self) -> List[str]:
+        """獲取並按時間排序的全局事實與推演事件列表"""
+        # 1. 獲取 Zep 初始事實（前言背景）
+        all_edges = []
+        try:
+            if self.graph_id:
+                all_edges = self.zep_tools.get_all_edges(self.graph_id, include_temporal=True)
+        except Exception as e:
+            logger.warning(f"獲取 Zep 圖譜邊失敗 (跳過圖譜背景前言): {e}")
+        
+        valid_events = []
+        for edge in all_edges:
+            if not edge.fact:
+                continue
+            sort_key = edge.valid_at or edge.created_at or ""
+            sort_key_str = str(sort_key) if sort_key else ""
+            valid_events.append({
+                "fact": edge.fact,
+                "time": sort_key_str
+            })
+        
+        # 排序與語意對齊
+        valid_events.sort(key=lambda x: x["time"])
+        
+        # 限制前言背景在 10 條以內
+        valid_events = valid_events[:10]
+        
+        timeline_lines = []
+        idx = 1
+        for ev in valid_events:
+            time_tag = f"[{ev['time']}] " if ev['time'] else ""
+            timeline_lines.append(f"{idx}. {time_tag}{ev['fact']}")
+            idx += 1
+            
+        # 2. 獲取模擬社群推演發言與行為
+        if self.simulation_id:
+            sim_actions = self._get_simulation_actions()
+            for a in sim_actions:
+                # 格式化點讚/踩/轉發數據
+                stats = []
+                if a["num_likes"] > 0: stats.append(f"{a['num_likes']}讚")
+                if a["num_dislikes"] > 0: stats.append(f"{a['num_dislikes']}踩")
+                if a["num_shares"] > 0: stats.append(f"{a['num_shares']}轉發")
+                stats_str = f" ({', '.join(stats)})" if stats else ""
+                
+                content_escaped = a["content"].replace("\n", " ").replace("\r", "")
+                
+                if a["action_type"] == "CREATE_POST":
+                    timeline_lines.append(
+                        f"{idx}. [Round {a['round']}] [{a['platform']}] @{a['agent_name']} 發表貼文: \"{content_escaped}\"{stats_str}"
+                    )
+                elif a["action_type"] == "CREATE_COMMENT":
+                    timeline_lines.append(
+                        f"{idx}. [Round {a['round']}] [{a['platform']} 評論] @{a['agent_name']} 發表評論: \"{content_escaped}\"{stats_str}"
+                    )
+                elif a["action_type"] == "REPOST":
+                    timeline_lines.append(
+                        f"{idx}. [Round {a['round']}] [{a['platform']}] @{a['agent_name']} 轉發了貼文{stats_str}"
+                    )
+                elif a["action_type"] == "QUOTE_POST":
+                    orig = a.get("action_args", {}).get("original_content", "")
+                    orig_escaped = orig.replace("\n", " ").replace("\r", "") if orig else ""
+                    orig_str = f" [針對原推: \"{orig_escaped[:40]}...\"]" if orig_escaped else ""
+                    timeline_lines.append(
+                        f"{idx}. [Round {a['round']}] [{a['platform']}] @{a['agent_name']} 引用轉發並評論: \"{content_escaped}\"{orig_str}{stats_str}"
+                    )
+                idx += 1
+                
+        return timeline_lines
+
+    def _parse_section_round_range(self, section_title: str) -> Optional[Tuple[int, int]]:
+        """解析章節標題中的輪次範圍 (例如 '第一幕：外交方案評估（第1~12輪）' -> (1, 12))"""
+        import re
+        m = re.search(r'第\s*(\d+)\s*[~至\-到]\s*(\d+)\s*輪', section_title)
+        if m:
+            return int(m.group(1)), int(m.group(2))
+        m2 = re.search(r'第\s*(\d+)\s*輪', section_title)
+        if m2:
+            return int(m2.group(1)), int(m2.group(1))
+        # 幕次關鍵字回退
+        if any(w in section_title for w in ["第一幕", "第一章", "初始"]):
+            return (1, 12)
+        elif any(w in section_title for w in ["第二幕", "第二章", "轉折", "黑天鵝"]):
+            return (13, 20)
+        elif any(w in section_title for w in ["第三幕", "第三章", "攻防", "撕裂", "籌碼"]):
+            return (21, 30)
+        elif any(w in section_title for w in ["第四幕", "終幕", "終局", "新秩序", "預測"]):
+            return (31, 40)
+        return None
+
+    def _get_timeline_events_for_section(self, section_title: str) -> List[str]:
+        """根據章節標題動態切片篩選該輪次區間的推演真實事件"""
+        round_range = self._parse_section_round_range(section_title)
+        if not round_range:
+            return self._get_sorted_timeline_events()[:40]
+
+        start_r, end_r = round_range
+        section_lines = []
+        idx = 1
+
+        # 1. 納入第一階段文檔初始客觀事實與地緣戰略背景（提供客觀現實錨點）
+        all_edges = []
+        try:
+            if self.graph_id:
+                all_edges = self.zep_tools.get_all_edges(self.graph_id, include_temporal=True)
+        except Exception as e:
+            logger.warning(f"獲取 Zep 圖譜邊失敗: {e}")
+
+        doc_edges = [e for e in all_edges if getattr(e, 'source_stage', '') == 'stage1_document' or not re.search(r'(?:模擬|推演)第\s*\d+\s*輪', e.fact or '')]
+        if doc_edges:
+            section_lines.append("【文檔初始客觀事實與地緣戰略背景（第一階段客觀基準）】：")
+            for edge in doc_edges[:6]:
+                round_tag = f"[{edge.round_label}] " if edge.round_label else "[文檔初始客觀事實] "
+                section_lines.append(f"{idx}. {round_tag}{edge.to_text(include_temporal=False)}")
+                idx += 1
+            section_lines.append(f"\n【本章節社群推演時間序事件紀實（第三階段 第{start_r}~{end_r}輪）】：")
+
+        # 篩選屬於 [start_r, end_r] 輪次的模擬社群動作
+        if self.simulation_id:
+            sim_actions = self._get_simulation_actions()
+            matching_actions = [a for a in sim_actions if start_r <= a.get("round", 0) <= end_r]
+            
+            # 若該區間事件較少 (< 5 條)，適當往前或往後擴展 1~2 輪作為緩衝
+            if len(matching_actions) < 5 and len(sim_actions) > len(matching_actions):
+                buf_start = max(1, start_r - 2)
+                buf_end = end_r + 2
+                matching_actions = [a for a in sim_actions if buf_start <= a.get("round", 0) <= buf_end]
+                
+            for a in matching_actions:
+                stats = []
+                if a.get("num_likes", 0) > 0: stats.append(f"{a['num_likes']}讚")
+                if a.get("num_dislikes", 0) > 0: stats.append(f"{a['num_dislikes']}踩")
+                if a.get("num_shares", 0) > 0: stats.append(f"{a['num_shares']}轉發")
+                stats_str = f" ({', '.join(stats)})" if stats else ""
+                
+                content_escaped = str(a.get("content", "")).replace("\n", " ").replace("\r", "")
+                atype = a.get("action_type")
+                r_num = a.get("round", 0)
+                plat = a.get("platform", "")
+                aname = a.get("agent_name", "")
+                
+                if atype == "CREATE_POST":
+                    section_lines.append(f"{idx}. [Round {r_num}] [{plat}] @{aname} 發表貼文: \"{content_escaped}\"{stats_str}")
+                elif atype == "CREATE_COMMENT":
+                    section_lines.append(f"{idx}. [Round {r_num}] [{plat} 評論] @{aname} 發表評論: \"{content_escaped}\"{stats_str}")
+                elif atype == "REPOST":
+                    section_lines.append(f"{idx}. [Round {r_num}] [{plat}] @{aname} 轉發了貼文{stats_str}")
+                elif atype == "QUOTE_POST":
+                    orig = a.get("action_args", {}).get("original_content", "")
+                    orig_escaped = orig.replace("\n", " ").replace("\r", "") if orig else ""
+                    orig_str = f" [針對原推: \"{orig_escaped[:40]}...\"]" if orig_escaped else ""
+                    section_lines.append(f"{idx}. [Round {r_num}] [{plat}] @{aname} 引用轉發並評論: \"{content_escaped}\"{orig_str}{stats_str}")
+                idx += 1
+
+        return section_lines if section_lines else self._get_sorted_timeline_events()[:30]
+
+
     def plan_outline(
         self, 
         progress_callback: Optional[Callable] = None
@@ -1160,6 +1415,9 @@ class ReportAgent:
             simulation_requirement=self.simulation_requirement
         )
         
+        # 獲取排序後的事件時間線
+        timeline_events = self._get_sorted_timeline_events()
+        
         if progress_callback:
             progress_callback("planning", 30, t('progress.generatingOutline'))
         
@@ -1170,7 +1428,7 @@ class ReportAgent:
             total_edges=context.get('graph_statistics', {}).get('total_edges', 0),
             entity_types=list(context.get('graph_statistics', {}).get('entity_types', {}).keys()),
             total_entities=context.get('total_entities', 0),
-            related_facts_json=json.dumps(context.get('related_facts', [])[:10], ensure_ascii=False, indent=2),
+            related_facts_json=json.dumps(timeline_events, ensure_ascii=False, indent=2),
         )
 
         try:
@@ -1261,20 +1519,29 @@ class ReportAgent:
         )
         system_prompt = f"{system_prompt}\n\n{get_language_instruction()}"
 
-        # 構建使用者prompt - 每個已完成章節各傳入最大4000字
+        # 構建使用者prompt - 每個已完成章節各傳入最大1200字（避免Prompt過長導致GPU顯存溢出）
         if previous_sections:
             previous_parts = []
             for sec in previous_sections:
-                # 每個章節最多4000字
-                truncated = sec[:4000] + "..." if len(sec) > 4000 else sec
+                truncated = sec[:1200] + "..." if len(sec) > 1200 else sec
                 previous_parts.append(truncated)
             previous_content = "\n\n---\n\n".join(previous_parts)
         else:
             previous_content = "（這是第一個章節）"
         
+        # 獲取本章節專屬時間軸事件紀實作為推演骨架
+        timeline_events = self._get_timeline_events_for_section(section.title)
+        if timeline_events:
+            timeline_context = "\n".join(timeline_events[:40])
+            if len(timeline_events) > 40:
+                timeline_context += f"\n... (本章節區間其餘 {len(timeline_events)-40} 條歷史事件已記錄於圖譜中)"
+        else:
+            timeline_context = "（無特定時間軸事件，請依賴圖譜檢索）"
+
         user_prompt = SECTION_USER_PROMPT_TEMPLATE.format(
             previous_content=previous_content,
             section_title=section.title,
+            timeline_context=timeline_context
         )
 
         messages = [
@@ -1444,11 +1711,11 @@ class ReportAgent:
                         iteration=iteration + 1
                     )
 
-                # 限制 Observation 長度以防止 LLM 上下文長度超限
-                max_obs_length = 6000
+                # 限制 Observation 長度以防止 LLM 上下文長度超限或遠端 GPU OOM
+                max_obs_length = 2200
                 display_result = result
                 if len(result) > max_obs_length:
-                    display_result = result[:max_obs_length] + f"\n\n... (內容過長，已截斷，僅顯示前 {max_obs_length} 字元) ..."
+                    display_result = result[:max_obs_length] + f"\n\n... (為確保推論穩定並避免GPU顯存溢出，已精簡展示前 {max_obs_length} 字元事實) ..."
 
                 tool_calls_count += 1
                 used_tools.add(call['name'])

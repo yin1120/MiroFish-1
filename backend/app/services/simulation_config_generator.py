@@ -237,7 +237,8 @@ class SimulationConfigGenerator:
         
         self.client = OpenAI(
             api_key=self.api_key,
-            base_url=self.base_url
+            base_url=self.base_url,
+            timeout=600.0
         )
     
     def generate_config(
@@ -673,7 +674,7 @@ class SimulationConfigGenerator:
         # 使用配置的上下文截斷長度
         context_truncated = context[:self.EVENT_CONFIG_CONTEXT_LENGTH]
         
-        prompt = f"""基於以下模擬需求，生成事件配置。
+        prompt = f"""基於以下模擬需求，生成初始劇情配置。
 
 模擬需求: {simulation_requirement}
 
@@ -683,26 +684,25 @@ class SimulationConfigGenerator:
 {type_info}
 
 ## 任務
-請生成事件配置JSON：
-- 提取熱點話題關鍵詞
-- 描述輿論發展方向
-- 設計初始帖子內容，**每個帖子必須指定 poster_type（釋出者型別）**
+請生成初始劇情配置JSON：
+- 提取故事核心發展的關鍵詞
+- 描述故事接下來的情節發展方向（請完全以故事的衝突與懸念為導向。請特別注意：不要在其中直接預設、宣告或寫出故事的最終結局，如“成功解救”、“擊敗大野狼”等；而是應該描述雙方角色在當前截斷點的情境與目標衝突、心理博弈、周旋過程，並賦予結局不確定性，讓故事勝負由模擬過程自行決定。同時嚴禁使用 MBTI 或是心理學術語。）
+- 設計初始發言內容，**每個發言必須指定 poster_type（發言者角色型別）**。請特別注意：初始發言內容必須生動、具體且具有故事推演的實質細節（例如大野狼如何設局、如何說服小紅帽去採花、如何偽裝或埋伏的具體言行細節），避免空泛、籠統的流水帳，為後續的模擬世界提供豐富、可深入互動的情節起點。
 
-**重要**: poster_type 必須從上面的"可用實體型別"中選擇，這樣初始帖子才能分配給合適的 Agent 釋出。
-例如：官方宣告應由 Official/University 型別釋出，新聞由 MediaOutlet 釋出，學生觀點由 Student 釋出。
+**重要**: poster_type 必須從上面的"可用實體型別"中選擇，這樣初始發言才能分配給合適的 Agent。
 
 返回JSON格式（不要markdown）：
 {{
     "hot_topics": ["關鍵詞1", "關鍵詞2", ...],
-    "narrative_direction": "<輿論發展方向描述>",
+    "narrative_direction": "<故事發展方向描述>",
     "initial_posts": [
-        {{"content": "帖子內容", "poster_type": "實體型別（必須從可用型別中選擇）"}},
+        {{"content": "發言內容", "poster_type": "實體型別（必須從可用型別中選擇）"}},
         ...
     ],
     "reasoning": "<簡要說明>"
 }}"""
 
-        system_prompt = "你是輿論分析專家。返回純JSON格式。注意 poster_type 必須精確匹配可用實體型別。"
+        system_prompt = "你是故事推演與劇情編排專家。返回純JSON格式。注意 poster_type 必須精確匹配可用實體型別。"
         system_prompt = f"{system_prompt}\n\n{get_language_instruction()}\nIMPORTANT: The 'poster_type' field value MUST be in English PascalCase exactly matching the available entity types. Only 'content', 'narrative_direction', 'hot_topics' and 'reasoning' fields should use the specified language."
 
         try:
@@ -720,7 +720,7 @@ class SimulationConfigGenerator:
         """解析事件配置結果"""
         return EventConfig(
             initial_posts=result.get("initial_posts", []),
-            scheduled_events=[],
+            scheduled_events=result.get("scheduled_events", []),
             hot_topics=result.get("hot_topics", []),
             narrative_direction=result.get("narrative_direction", "")
         )

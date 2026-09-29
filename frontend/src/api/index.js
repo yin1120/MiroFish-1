@@ -4,7 +4,7 @@ import i18n from '../i18n'
 // 建立 axios 執行個體
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001',
-  timeout: 900000, // 15 分鐘逾時（本體生成可能需要較長時間）
+  timeout: 1200000, // 20 分鐘逾時（本體生成可能需要較長時間）
   headers: {
     'Content-Type': 'application/json'
   }

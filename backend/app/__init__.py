@@ -18,6 +18,9 @@ from .utils.logger import setup_logger, get_logger
 
 def create_app(config_class=Config):
     """Flask應用工廠函式"""
+    # 執行 camel-ai 智慧圖譜與本地LLM相容性修補
+    from .utils import camel_patch
+    
     app = Flask(__name__)
     app.config.from_object(config_class)
     

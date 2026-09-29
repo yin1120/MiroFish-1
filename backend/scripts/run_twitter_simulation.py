@@ -36,6 +36,12 @@ _project_root = os.path.abspath(os.path.join(_backend_dir, '..'))
 sys.path.insert(0, _scripts_dir)
 sys.path.insert(0, _backend_dir)
 
+# 加载 camel-ai 工具 Strict 模式修补以支持本地 LLM 服务器 (如 vLLM)
+try:
+    import app.utils.camel_patch
+except ImportError:
+    pass
+
 # 加载项目根目录的 .env 文件（包含 LLM_API_KEY 等配置）
 from dotenv import load_dotenv
 _env_file = os.path.join(_project_root, '.env')
@@ -129,6 +135,8 @@ except ImportError as e:
     print(f"错误: 缺少依赖 {e}")
     print("请先安装: pip install oasis-ai camel-ai")
     sys.exit(1)
+
+from scheduled_events_handler import get_scheduled_events_for_round, prepare_scheduled_actions
 
 
 # IPC相关常量
@@ -393,6 +401,8 @@ class TwitterSimulationRunner:
         ActionType.FOLLOW,
         ActionType.DO_NOTHING,
         ActionType.QUOTE_POST,
+        ActionType.CREATE_COMMENT,
+        ActionType.LIKE_COMMENT,
     ]
     
     def __init__(self, config_path: str, wait_for_commands: bool = True):
@@ -584,8 +594,11 @@ class TwitterSimulationRunner:
         # 数据库路径
         db_path = self._get_db_path()
         if os.path.exists(db_path):
-            os.remove(db_path)
-            print(f"已删除旧数据库: {db_path}")
+            try:
+                os.remove(db_path)
+                print(f"已删除旧数据库: {db_path}")
+            except Exception as e:
+                print(f"警告: 无法清除旧 Twitter 数据库: {e}，这可能不影响后续运行")
         
         # 创建环境
         print("创建OASIS环境...")
@@ -595,6 +608,10 @@ class TwitterSimulationRunner:
             database_path=db_path,
             semaphore=30,  # 限制最大并发 LLM 请求数，防止 API 过载
         )
+        # 為所有 agent 物件綁定 db_path，供 Self-Action Memory 檢索
+        if hasattr(self, 'agent_graph') and hasattr(self.agent_graph, 'agents'):
+            for ag in self.agent_graph.agents.values():
+                ag.db_path = db_path
         
         await self.env.reset()
         print("环境初始化完成\n")
@@ -630,25 +647,39 @@ class TwitterSimulationRunner:
         print("\n开始模拟循环...")
         start_time = datetime.now()
         
+        # 建立 agent_names 映射
+        agent_names = {cfg.get("agent_id", 0): cfg.get("entity_name", f"Agent_{cfg.get('agent_id', 0)}") for cfg in self.config.get("agent_configs", [])}
+        
         for round_num in range(total_rounds):
+            current_round = round_num + 1
             # 计算当前模拟时间
             simulated_minutes = round_num * minutes_per_round
             simulated_hour = (simulated_minutes // 60) % 24
             simulated_day = simulated_minutes // (60 * 24) + 1
+            
+            # 檢核並準備該輪的排程事件 (scheduled events)
+            matching_scheduled = get_scheduled_events_for_round(self.config, current_round, "twitter")
+            scheduled_actions, scheduled_meta = prepare_scheduled_actions(
+                self.env, matching_scheduled, db_path, agent_names, "twitter", print
+            )
             
             # 获取本轮激活的Agent
             active_agents = self._get_active_agents_for_round(
                 self.env, simulated_hour, round_num
             )
             
-            if not active_agents:
-                continue
-            
             # 构建动作
             actions = {
                 agent: LLMAction()
                 for _, agent in active_agents
             }
+            
+            # 若有排程動作，覆蓋或新增至當輪動作字典中
+            for sched_agent, manual_act in scheduled_actions.items():
+                actions[sched_agent] = manual_act
+            
+            if not actions:
+                continue
             
             # 执行动作
             await self.env.step(actions)

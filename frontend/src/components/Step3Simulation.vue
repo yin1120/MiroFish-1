@@ -138,11 +138,25 @@
               <div class="marker-dot"></div>
             </div>
             
-            <div class="timeline-card">
+            <div class="timeline-card" :class="{ 'is-scheduled': action.action_args?.is_scheduled || action.is_scheduled }">
               <div class="card-header">
                 <div class="agent-info">
-                  <div class="avatar-placeholder">{{ (action.agent_name || 'A')[0] }}</div>
+                  <div class="avatar-placeholder" :class="{ 'scheduled-avatar': action.action_args?.is_scheduled || action.is_scheduled }">
+                    {{ (action.agent_name || 'A')[0] }}
+                  </div>
                   <span class="agent-name">{{ action.agent_name }}</span>
+                  <!-- 劇本排程 / 突發新聞徽章 -->
+                  <span 
+                    v-if="action.action_args?.is_scheduled || action.is_scheduled" 
+                    class="scheduled-event-badge"
+                    :class="action.action_args?.event_type || 'targeted_action'"
+                  >
+                    <span class="badge-dot"></span>
+                    {{ (action.action_args?.event_type === 'breaking_news' || action.event_type === 'breaking_news') ? $t('step2.breakingNewsBadge') : $t('step2.scheduledEventBadge') }}
+                  </span>
+                  <span v-if="action.action_args?.description" class="scheduled-desc-pill">
+                    {{ action.action_args.description }}
+                  </span>
                 </div>
                 
                 <div class="header-meta">
@@ -170,7 +184,7 @@
                   <div v-if="action.action_args?.original_content" class="quoted-block">
                     <div class="quote-header">
                       <svg class="icon-small" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                      <span class="quote-label">@{{ action.action_args.original_author_name || 'User' }}</span>
+                      <span class="quote-label">Quoting @{{ action.action_args.original_author_name || 'User' }}</span>
                     </div>
                     <div class="quote-text">
                       {{ truncateContent(action.action_args.original_content, 150) }}
@@ -200,6 +214,17 @@
                   </div>
                 </template>
 
+                <!-- DISLIKE_POST: 点踩帖子 -->
+                <template v-if="action.action_type === 'DISLIKE_POST'">
+                  <div class="dislike-info">
+                    <svg class="icon-small filled-dislike" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path></svg>
+                    <span class="dislike-label">Disliked @{{ action.action_args?.post_author_name || 'User' }}'s post</span>
+                  </div>
+                  <div v-if="action.action_args?.post_content" class="disliked-content">
+                    "{{ truncateContent(action.action_args.post_content, 120) }}"
+                  </div>
+                </template>
+
                 <!-- CREATE_COMMENT: 发表评论 -->
                 <template v-if="action.action_type === 'CREATE_COMMENT'">
                   <div v-if="action.action_args?.content" class="content-text">
@@ -208,6 +233,28 @@
                   <div v-if="action.action_args?.post_id" class="comment-context">
                     <svg class="icon-small" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                     <span>Reply to post #{{ action.action_args.post_id }}</span>
+                  </div>
+                </template>
+
+                <!-- LIKE_COMMENT: 点赞评论 -->
+                <template v-if="action.action_type === 'LIKE_COMMENT'">
+                  <div class="like-info">
+                    <svg class="icon-small filled" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                    <span class="like-label">Liked @{{ action.action_args?.comment_author_name || 'User' }}'s comment</span>
+                  </div>
+                  <div v-if="action.action_args?.comment_content" class="liked-content">
+                    "{{ truncateContent(action.action_args.comment_content, 120) }}"
+                  </div>
+                </template>
+
+                <!-- DISLIKE_COMMENT: 点踩评论 -->
+                <template v-if="action.action_type === 'DISLIKE_COMMENT'">
+                  <div class="dislike-info">
+                    <svg class="icon-small filled-dislike" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path></svg>
+                    <span class="dislike-label">Disliked @{{ action.action_args?.comment_author_name || 'User' }}'s comment</span>
+                  </div>
+                  <div v-if="action.action_args?.comment_content" class="disliked-content">
+                    "{{ truncateContent(action.action_args.comment_content, 120) }}"
                   </div>
                 </template>
 
@@ -232,7 +279,7 @@
                 <template v-if="action.action_type === 'UPVOTE_POST' || action.action_type === 'DOWNVOTE_POST'">
                   <div class="vote-info">
                     <svg v-if="action.action_type === 'UPVOTE_POST'" class="icon-small" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
-                    <svg v-else class="icon-small" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    <svg v-else class="icon-small filled-dislike" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     <span class="vote-label">{{ action.action_type === 'UPVOTE_POST' ? 'Upvoted' : 'Downvoted' }} Post</span>
                   </div>
                   <div v-if="action.action_args?.post_content" class="voted-content">
@@ -249,7 +296,7 @@
                 </template>
 
                 <!-- 通用回退：未知类型或有 content 但未被上述处理 -->
-                <div v-if="!['CREATE_POST', 'QUOTE_POST', 'REPOST', 'LIKE_POST', 'CREATE_COMMENT', 'SEARCH_POSTS', 'FOLLOW', 'UPVOTE_POST', 'DOWNVOTE_POST', 'DO_NOTHING'].includes(action.action_type) && action.action_args?.content" class="content-text">
+                <div v-if="!['CREATE_POST', 'QUOTE_POST', 'REPOST', 'LIKE_POST', 'DISLIKE_POST', 'CREATE_COMMENT', 'LIKE_COMMENT', 'DISLIKE_COMMENT', 'SEARCH_POSTS', 'FOLLOW', 'UPVOTE_POST', 'DOWNVOTE_POST', 'DO_NOTHING'].includes(action.action_type) && action.action_args?.content" class="content-text">
                   {{ action.action_args.content }}
                 </div>
               </div>
@@ -597,8 +644,10 @@ const getActionTypeLabel = (type) => {
     'CREATE_POST': 'POST',
     'REPOST': 'REPOST',
     'LIKE_POST': 'LIKE',
+    'DISLIKE_POST': 'DISLIKE',
     'CREATE_COMMENT': 'COMMENT',
-    'LIKE_COMMENT': 'LIKE',
+    'LIKE_COMMENT': 'LIKE COMMENT',
+    'DISLIKE_COMMENT': 'DISLIKE COMMENT',
     'DO_NOTHING': 'IDLE',
     'FOLLOW': 'FOLLOW',
     'SEARCH_POSTS': 'SEARCH',
@@ -614,13 +663,15 @@ const getActionTypeClass = (type) => {
     'CREATE_POST': 'badge-post',
     'REPOST': 'badge-action',
     'LIKE_POST': 'badge-action',
+    'DISLIKE_POST': 'badge-danger',
     'CREATE_COMMENT': 'badge-comment',
     'LIKE_COMMENT': 'badge-action',
+    'DISLIKE_COMMENT': 'badge-danger',
     'QUOTE_POST': 'badge-post',
     'FOLLOW': 'badge-meta',
     'SEARCH_POSTS': 'badge-meta',
     'UPVOTE_POST': 'badge-action',
-    'DOWNVOTE_POST': 'badge-action',
+    'DOWNVOTE_POST': 'badge-danger',
     'DO_NOTHING': 'badge-idle'
   }
   return classes[type] || 'badge-default'
@@ -1026,6 +1077,58 @@ onUnmounted(() => {
   border-color: #DDD;
 }
 
+.timeline-card.is-scheduled {
+  border-left: 3px solid #FF5722;
+  background: linear-gradient(180deg, #FFFDFB 0%, #FFF 100%);
+  box-shadow: 0 3px 12px rgba(255, 87, 34, 0.08);
+}
+
+.avatar-placeholder.scheduled-avatar {
+  background: #FF5722;
+}
+
+.scheduled-event-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+}
+
+.scheduled-event-badge.targeted_action {
+  background: #FFF2ED;
+  color: #FF5722;
+  border: 1px solid #FFCCBA;
+}
+
+.scheduled-event-badge.breaking_news {
+  background: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+}
+
+.scheduled-event-badge .badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.scheduled-desc-pill {
+  font-size: 10px;
+  color: #64748B;
+  background: #F1F5F9;
+  padding: 1px 6px;
+  border-radius: 3px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Left side (Twitter) */
 .timeline-item.twitter {
   justify-content: flex-start;
@@ -1108,6 +1211,7 @@ onUnmounted(() => {
 .badge-post { background: #F0F0F0; color: #333; border-color: #E0E0E0; }
 .badge-comment { background: #F0F0F0; color: #666; border-color: #E0E0E0; }
 .badge-action { background: #FFF; color: #666; border: 1px solid #E0E0E0; }
+.badge-danger { background: #FFF0F0; color: #D32F2F; border: 1px solid #FFCDD2; }
 .badge-meta { background: #FAFAFA; color: #999; border: 1px dashed #DDD; }
 .badge-idle { opacity: 0.5; }
 
@@ -1134,7 +1238,23 @@ onUnmounted(() => {
   color: #555;
 }
 
-.quote-header, .repost-info, .like-info, .search-info, .follow-info, .vote-info, .idle-info, .comment-context {
+.liked-content, .disliked-content, .voted-content {
+  font-size: 12px;
+  color: #555;
+  font-style: italic;
+  background: #F9F9F9;
+  border-left: 2px solid #E0E0E0;
+  padding: 6px 10px;
+  border-radius: 2px;
+  margin-top: 4px;
+}
+
+.disliked-content {
+  border-left-color: #EF5350;
+  background: #FFFBFB;
+}
+
+.quote-header, .repost-info, .like-info, .dislike-info, .search-info, .follow-info, .vote-info, .idle-info, .comment-context {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1143,11 +1263,19 @@ onUnmounted(() => {
   color: #666;
 }
 
+.dislike-label {
+  color: #D32F2F;
+  font-weight: 500;
+}
+
 .icon-small {
   color: #999;
 }
 .icon-small.filled {
   color: #999; /* Keep icons neutral unless highlighted */
+}
+.icon-small.filled-dislike {
+  color: #D32F2F;
 }
 
 .search-query {

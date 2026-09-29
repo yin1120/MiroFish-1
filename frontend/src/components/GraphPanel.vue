@@ -60,6 +60,11 @@
           
           <!-- 节点详情 -->
           <div v-if="selectedItem.type === 'node'" class="detail-content">
+            <!-- 1-Hop 一度關係圖按鈕（置頂放置，避免被長 Summary 等屬性擠到下方隱藏） -->
+            <button class="view-1hop-btn" @click="open1HopModal(selectedItem.data)" style="margin-top: 0; margin-bottom: 16px;">
+              查看一度關係圖 (1-Hop)
+            </button>
+            
             <div class="detail-row">
               <span class="detail-label">Name:</span>
               <span class="detail-value">{{ selectedItem.data.name }}</span>
@@ -233,6 +238,96 @@
       <span class="toggle-label">Show Edge Labels</span>
     </div>
   </div>
+  
+  <!-- 1-Hop 局部關係圖彈出視窗 (Modal) -->
+  <div v-if="is1HopModalVisible" class="hop-modal-overlay" @click="close1HopModal">
+    <div class="hop-modal-content" :class="{ maximized: is1HopModalMaximized }" @click.stop>
+      <div class="hop-modal-header">
+        <span class="hop-modal-title">以「{{ targetNodeName }}」為核心的一度關係圖</span>
+        <div class="header-actions">
+          <button class="maximize-modal-btn" @click="toggle1HopModalMaximize">
+            {{ is1HopModalMaximized ? '🗗 視窗' : '🗖 全螢幕' }}
+          </button>
+          <button class="hop-modal-close" @click="close1HopModal">×</button>
+        </div>
+      </div>
+      <div class="hop-modal-body">
+        <div class="hop-modal-graph" ref="modalGraphContainer">
+          <svg ref="modalGraphSvg" class="hop-modal-svg"></svg>
+        </div>
+        <!-- 模態視窗內部的詳情面板 -->
+        <div class="hop-modal-detail" v-if="modalSelectedItem">
+          <div class="modal-detail-header">
+            <span class="modal-detail-title">{{ modalSelectedItem.type === 'node' ? 'Node Details' : 'Relationship' }}</span>
+            <button class="modal-detail-close" @click="modalSelectedItem = null">×</button>
+          </div>
+          <div class="modal-detail-content">
+            <!-- 節點詳情 -->
+            <div v-if="modalSelectedItem.type === 'node'">
+              <div class="detail-row">
+                <span class="detail-label">Name:</span>
+                <span class="detail-value highlight">{{ modalSelectedItem.data.name }}</span>
+              </div>
+              <div class="detail-row" v-if="modalSelectedItem.entityType">
+                <span class="detail-label">Type:</span>
+                <span class="detail-value">{{ modalSelectedItem.entityType }}</span>
+              </div>
+              <div class="detail-row" v-if="modalSelectedItem.data.uuid">
+                <span class="detail-label">UUID:</span>
+                <span class="detail-value uuid-text">{{ modalSelectedItem.data.uuid }}</span>
+              </div>
+              <div class="detail-section" v-if="modalSelectedItem.data.attributes && Object.keys(modalSelectedItem.data.attributes).length > 0">
+                <div class="section-subtitle">Properties:</div>
+                <div class="properties-list compact">
+                  <div v-for="(v, k) in modalSelectedItem.data.attributes" :key="k" class="property-item">
+                    <span class="property-key">{{ k }}:</span>
+                    <span class="property-value">{{ v || 'None' }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="detail-section" v-if="modalSelectedItem.data.summary">
+                <div class="section-subtitle">Summary:</div>
+                <p class="summary-text compact">{{ modalSelectedItem.data.summary }}</p>
+              </div>
+              <button class="modal-action-btn" @click="render1HopGraph(modalSelectedItem.data)">
+                查看一度關係圖(1-HOP)
+              </button>
+            </div>
+            <!-- 關係詳情 -->
+            <div v-else>
+              <div class="edge-relation-header compact">
+                {{ modalSelectedItem.data.source_name }} → {{ modalSelectedItem.data.target_name }}
+              </div>
+              
+              <template v-if="modalSelectedItem.data.isGroup">
+                <div v-for="(edge, idx) in modalSelectedItem.data.edges" :key="edge.uuid || idx" class="modal-edge-group-item">
+                  <div class="group-item-title">#{{ idx + 1 }} {{ edge.fact_type || edge.name }}</div>
+                  <div class="detail-row" v-if="edge.fact">
+                    <span class="detail-label">Fact:</span>
+                    <span class="detail-value fact-text">{{ edge.fact }}</span>
+                  </div>
+                  <div class="detail-row" v-if="edge.valid_at">
+                    <span class="detail-label">Valid From:</span>
+                    <span class="detail-value">{{ formatDateTime(edge.valid_at) }}</span>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <div class="detail-row">
+                  <span class="detail-label">Type:</span>
+                  <span class="detail-value">{{ modalSelectedItem.data.fact_type || modalSelectedItem.data.name }}</span>
+                </div>
+                <div class="detail-row" v-if="modalSelectedItem.data.fact">
+                  <span class="detail-label">Fact:</span>
+                  <span class="detail-value fact-text">{{ modalSelectedItem.data.fact }}</span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -251,6 +346,13 @@ const emit = defineEmits(['refresh', 'toggle-maximize'])
 const graphContainer = ref(null)
 const graphSvg = ref(null)
 const selectedItem = ref(null)
+
+// 1-Hop 一度關係圖 Modal 狀態
+const is1HopModalVisible = ref(false)
+const targetNodeName = ref('')
+const modalGraphContainer = ref(null)
+const modalGraphSvg = ref(null)
+const modalSelectedItem = ref(null)
 const showEdgeLabels = ref(true) // 默认显示边标签
 const expandedSelfLoops = ref(new Set()) // 展开的自环项
 const showSimulationFinishedHint = ref(false) // 模拟结束后的提示
@@ -259,6 +361,418 @@ const wasSimulating = ref(false) // 追踪之前是否在模拟中
 // 关闭模拟结束提示
 const dismissFinishedHint = () => {
   showSimulationFinishedHint.value = false
+}
+
+const is1HopModalMaximized = ref(false)
+const current1HopCenterNode = ref(null)
+
+const toggle1HopModalMaximize = () => {
+  is1HopModalMaximized.value = !is1HopModalMaximized.value
+  nextTick(() => {
+    if (current1HopCenterNode.value) {
+      render1HopGraph(current1HopCenterNode.value)
+    }
+  })
+}
+
+// 打開 1-Hop 一度關係圖視窗
+const open1HopModal = (nodeData) => {
+  is1HopModalVisible.value = true
+  is1HopModalMaximized.value = false
+  current1HopCenterNode.value = nodeData
+  targetNodeName.value = nodeData.name || '未命名'
+  nextTick(() => {
+    render1HopGraph(nodeData)
+  })
+}
+
+// 關閉 1-Hop 一度關係圖視窗
+const close1HopModal = () => {
+  is1HopModalVisible.value = false
+  is1HopModalMaximized.value = false
+  modalSelectedItem.value = null
+  current1HopCenterNode.value = null
+  if (modalSimulation) {
+    modalSimulation.stop()
+  }
+}
+
+// 儲存 1-Hop 仿真實例，防止多重仿真並行造成記憶體洩漏與畫面凍結
+let modalSimulation = null
+
+// 渲染 1-Hop 局部關係圖 (D3.js)
+const render1HopGraph = (centerNode) => {
+  if (!modalGraphSvg.value || !props.graphData) return
+  current1HopCenterNode.value = centerNode
+  
+  const container = modalGraphContainer.value
+  if (!container) return
+  
+  // 停止上一次的一度關係圖仿真，避免資源衝突與畫面凍結
+  if (modalSimulation) {
+    modalSimulation.stop()
+  }
+  
+  // 獲取與本體配置對應的通用顏色
+  const getNodeColor = (type) => {
+    const found = entityTypes.value?.find(t => t.name === type)
+    return found ? found.color : '#999'
+  }
+  
+  // 預設選中當前核心節點
+  modalSelectedItem.value = {
+    type: 'node',
+    data: centerNode,
+    color: getNodeColor(centerNode.labels?.find(l => l !== 'Entity' && l !== 'Node') || 'Entity'),
+    entityType: centerNode.labels?.find(l => l !== 'Entity' && l !== 'Node') || 'Entity'
+  }
+  targetNodeName.value = centerNode.name || '未命名'
+  
+  const rect = container.getBoundingClientRect()
+  const width = rect.width || 750
+  const height = rect.height || 500
+  
+  const svg = d3.select(modalGraphSvg.value)
+    .attr('width', width)
+    .attr('height', height)
+    .attr('viewBox', `0 0 ${width} ${height}`)
+    
+  svg.selectAll('*').remove()
+  
+  const centerUuid = centerNode.uuid
+  const edgesData = props.graphData.edges || []
+  const nodesData = props.graphData.nodes || []
+  
+  // 1. 篩選與該節點相連的 1-hop 邊，且保證這條線的兩端節點都存在於 nodesData 中，防止 D3 找不到節點崩潰！
+  const nodeIds = new Set(nodesData.map(n => n.uuid))
+  const filteredEdges = edgesData.filter(e => 
+    (e.source_node_uuid === centerUuid || e.target_node_uuid === centerUuid) &&
+    nodeIds.has(e.source_node_uuid) && 
+    nodeIds.has(e.target_node_uuid)
+  )
+  
+  // 2. 篩選這些邊連接的節點（包含中心節點本身）
+  const connectedNodeUuids = new Set([centerUuid])
+  filteredEdges.forEach(e => {
+    connectedNodeUuids.add(e.source_node_uuid)
+    connectedNodeUuids.add(e.target_node_uuid)
+  })
+  const filteredNodes = nodesData.filter(n => connectedNodeUuids.has(n.uuid))
+  
+  // 3. 準備 D3 節點格式
+  const nodes = filteredNodes.map(n => ({
+    id: n.uuid,
+    name: n.name || '未命名',
+    type: n.labels?.find(l => l !== 'Entity' && l !== 'Node') || 'Entity',
+    isCenter: n.uuid === centerUuid,
+    rawData: n
+  }))
+  
+  const nodeMap = {}
+  nodesData.forEach(n => { nodeMap[n.uuid] = n })
+  
+  // 4. 不再合併邊，保留每一條關係連線，計算每對節點的曲率 (與主圖譜算法完全一致)
+  const edgePairCount = {}
+  filteredEdges.forEach(e => {
+    const pairKey = [e.source_node_uuid, e.target_node_uuid].sort().join('_')
+    edgePairCount[pairKey] = (edgePairCount[pairKey] || 0) + 1
+  })
+  
+  const edgePairIndex = {}
+  const edges = filteredEdges.map(e => {
+    const isSelfLoop = e.source_node_uuid === e.target_node_uuid
+    const pairKey = [e.source_node_uuid, e.target_node_uuid].sort().join('_')
+    const totalCount = edgePairCount[pairKey]
+    const currentIndex = edgePairIndex[pairKey] || 0
+    edgePairIndex[pairKey] = currentIndex + 1
+    
+    const isReversed = e.source_node_uuid > e.target_node_uuid
+    let curvature = 0
+    if (totalCount > 1 && !isSelfLoop) {
+      const curvatureRange = Math.min(1.2, 0.6 + totalCount * 0.15)
+      curvature = ((currentIndex / (totalCount - 1)) - 0.5) * curvatureRange * 2
+      if (isReversed) {
+        curvature = -curvature
+      }
+    }
+    
+    return {
+      source: e.source_node_uuid,
+      target: e.target_node_uuid,
+      type: e.fact_type || e.name || 'RELATED',
+      curvature,
+      isSelfLoop,
+      rawData: {
+        ...e,
+        source_name: nodeMap[e.source_node_uuid]?.name || '未知',
+        target_name: nodeMap[e.target_node_uuid]?.name || '未知',
+        name: e.name || e.fact_type || 'RELATED'
+      }
+    }
+  })
+  
+  // 5. 力導向布局，根據節點數量動態調整斥力 (charge)
+  const chargeStrength = -150 - (nodes.length * 5)
+  const simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(edges).id(d => d.id).distance(185).strength(0.8))
+    .force('charge', d3.forceManyBody().strength(chargeStrength))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(d => d.isCenter ? 70 : 48))
+    .force('x', d3.forceX(width / 2).strength(0.15))
+    .force('y', d3.forceY(height / 2).strength(0.15))
+    
+  modalSimulation = simulation
+    
+  const g = svg.append('g')
+  
+  // 縮放與平移
+  svg.call(d3.zoom()
+    .extent([[0, 0], [width, height]])
+    .scaleExtent([0.3, 4])
+    .on('zoom', (event) => {
+      g.attr('transform', event.transform)
+    }))
+    
+  // 計算曲線路徑 (與主圖譜 getLinkPath 完全一致)
+  const getLinkPath = (d) => {
+    const sx = d.source.x, sy = d.source.y
+    const tx = d.target.x, ty = d.target.y
+    
+    if (d.isSelfLoop) {
+      const loopRadius = 30
+      const x1 = sx + 8
+      const y1 = sy - 4
+      const x2 = sx + 8
+      const y2 = sy + 4
+      return `M${x1},${y1} A${loopRadius},${loopRadius} 0 1,1 ${x2},${y2}`
+    }
+    
+    if (d.curvature === 0) {
+      return `M${sx},${sy} L${tx},${ty}`
+    }
+    
+    const dx = tx - sx, dy = ty - sy
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    const baseOffset = Math.max(35, dist * 0.25)
+    const offsetX = -dy / dist * d.curvature * baseOffset
+    const offsetY = dx / dist * d.curvature * baseOffset
+    const cx = (sx + tx) / 2 + offsetX
+    const cy = (sy + ty) / 2 + offsetY
+    
+    return `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`
+  }
+  
+  // 計算曲線中點 (與主圖譜 getLinkMidpoint 完全一致)
+  const getLinkMidpoint = (d) => {
+    const sx = d.source.x, sy = d.source.y
+    const tx = d.target.x, ty = d.target.y
+    
+    if (d.isSelfLoop) {
+      return { x: sx + 70, y: sy }
+    }
+    
+    if (d.curvature === 0) {
+      return { x: (sx + tx) / 2, y: (sy + ty) / 2 }
+    }
+    
+    const dx = tx - sx, dy = ty - sy
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    const baseOffset = Math.max(35, dist * 0.25)
+    const offsetX = -dy / dist * d.curvature * baseOffset
+    const offsetY = dx / dist * d.curvature * baseOffset
+    const cx = (sx + tx) / 2 + offsetX
+    const cy = (sy + ty) / 2 + offsetY
+    
+    const midX = 0.25 * sx + 0.5 * cx + 0.25 * tx
+    const midY = 0.25 * sy + 0.5 * cy + 0.25 * ty
+    
+    return { x: midX, y: midY }
+  }
+    
+  // 繪製連線組 (與主圖譜樣式完全一致)
+  const linkGroup = g.append('g')
+    .attr('class', 'modal-links')
+    
+  // 厚度為 12px 的透明輔助線，方便用戶點擊
+  const thickLink = linkGroup.selectAll('.thick-link')
+    .data(edges)
+    .enter().append('path')
+    .attr('fill', 'none')
+    .attr('stroke', 'transparent')
+    .attr('stroke-width', 12)
+    .style('cursor', 'pointer')
+    .on('click', (event, d) => {
+      event.stopPropagation()
+      selectEdgeVisual(d)
+    })
+    
+  // 實際顯示的 1.5px 實線
+  const link = linkGroup.selectAll('.visible-link')
+    .data(edges)
+    .enter().append('path')
+    .attr('fill', 'none')
+    .attr('stroke', '#C0C0C0')
+    .attr('stroke-width', 1.5)
+    .style('cursor', 'pointer')
+    .on('click', (event, d) => {
+      event.stopPropagation()
+      selectEdgeVisual(d)
+    })
+    
+  // 邊標籤背景矩形 (與主圖譜一致)
+  const linkLabelBg = g.append('g')
+    .attr('class', 'modal-link-label-bgs')
+    .selectAll('rect')
+    .data(edges)
+    .enter().append('rect')
+    .attr('fill', 'rgba(255,255,255,0.95)')
+    .attr('rx', 3)
+    .attr('ry', 3)
+    .style('cursor', 'pointer')
+    .on('click', (event, d) => {
+      event.stopPropagation()
+      selectEdgeVisual(d)
+    })
+    
+  // 邊上的文字標籤 (與主圖譜一致)
+  const linkLabel = g.append('g')
+    .attr('class', 'modal-link-labels')
+    .selectAll('text')
+    .data(edges)
+    .enter().append('text')
+    .text(d => d.type)
+    .attr('font-size', '9px')
+    .attr('fill', '#666')
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'middle')
+    .style('cursor', 'pointer')
+    .style('font-family', 'system-ui, sans-serif')
+    .on('click', (event, d) => {
+      event.stopPropagation()
+      selectEdgeVisual(d)
+    })
+    
+  // 繪製節點組
+  const node = g.append('g')
+    .attr('class', 'modal-nodes')
+    .selectAll('g')
+    .data(nodes)
+    .enter()
+    .append('g')
+    .style('cursor', 'pointer')
+    .on('click', (event, d) => {
+      event.stopPropagation()
+      selectNodeVisual(event, d)
+    })
+    .call(d3.drag()
+      .on('start', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart()
+        d.fx = d.x
+        d.fy = d.y
+      })
+      .on('drag', (event, d) => {
+        d.fx = event.x
+        d.fy = event.y
+      })
+      .on('end', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0)
+        d.fx = null
+        d.fy = null
+      }))
+      
+  node.append('circle')
+    .attr('r', 10) // 與主圖譜節點大小一致
+    .attr('fill', d => getNodeColor(d.type))
+    .attr('stroke', '#fff')
+    .attr('stroke-width', 2.5) // 與主圖譜一致
+    
+  node.append('text')
+    .attr('dx', 14)
+    .attr('dy', 4)
+    .text(d => d.name)
+    .attr('font-size', '11px')
+    .attr('fill', '#333')
+    .attr('font-family', 'system-ui, sans-serif')
+    
+  // 預設高亮選中中心節點以配合初始載入
+  const centerNodeObj = nodes.find(n => n.isCenter)
+  if (centerNodeObj) {
+    const centerNodeG = node.filter(n => n.isCenter)
+    centerNodeG.select('circle')
+      .attr('stroke', '#E91E63')
+      .attr('stroke-width', 4)
+    link.filter(l => l.source.id === centerNodeObj.id || l.target.id === centerNodeObj.id)
+      .attr('stroke', '#E91E63')
+      .attr('stroke-width', 3)
+  }
+  
+  // 輔助函式：處理節點點擊高亮特效 (熱粉色 #E91E63)
+  function selectNodeVisual(event, d) {
+    modalSelectedItem.value = {
+      type: 'node',
+      data: d.rawData,
+      color: getNodeColor(d.type),
+      entityType: d.type
+    }
+    // 重置所有節點與連線樣式為預設狀態
+    node.selectAll('circle').attr('stroke', '#fff').attr('stroke-width', 2.5)
+    link.attr('stroke', '#C0C0C0').attr('stroke-width', 1.5)
+    
+    // 高亮選中節點的圓圈
+    d3.select(event.currentTarget).select('circle')
+      .attr('stroke', '#E91E63')
+      .attr('stroke-width', 4)
+      
+    // 高亮與該節點相連的連線
+    link.filter(l => l.source.id === d.id || l.target.id === d.id)
+      .attr('stroke', '#E91E63')
+      .attr('stroke-width', 3)
+  }
+  
+  // 輔助函式：處理連線點擊高亮特效 (藍色 #3498db)
+  function selectEdgeVisual(d) {
+    modalSelectedItem.value = {
+      type: 'edge',
+      data: d.rawData
+    }
+    // 重置所有節點與連線樣式
+    node.selectAll('circle').attr('stroke', '#fff').attr('stroke-width', 2.5)
+    link.attr('stroke', '#C0C0C0').attr('stroke-width', 1.5)
+    
+    // 高亮選中連線
+    link.filter(l => l === d)
+      .attr('stroke', '#3498db')
+      .attr('stroke-width', 3)
+  }
+    
+  // 更新位置
+  simulation.on('tick', () => {
+    thickLink.attr('d', d => getLinkPath(d))
+    link.attr('d', d => getLinkPath(d))
+    
+    linkLabel.each(function(d) {
+      const mid = getLinkMidpoint(d)
+      d3.select(this)
+        .attr('x', mid.x)
+        .attr('y', mid.y)
+    })
+    
+    linkLabelBg.each(function(d, i) {
+      const mid = getLinkMidpoint(d)
+      const textEl = linkLabel.nodes()[i]
+      if (textEl) {
+        const bbox = textEl.getBBox()
+        d3.select(this)
+          .attr('x', mid.x - bbox.width / 2 - 4)
+          .attr('y', mid.y - bbox.height / 2 - 2)
+          .attr('width', bbox.width + 8)
+          .attr('height', bbox.height + 4)
+      }
+    })
+      
+    node
+      .attr('transform', d => `translate(${d.x},${d.y})`)
+  })
 }
 
 // 监听 isSimulating 变化，检测模拟结束
@@ -1419,5 +1933,241 @@ input:checked + .slider:before {
 .episode-tag.small {
   padding: 3px 6px;
   font-size: 9px;
+}
+
+/* 1-Hop 一度關係圖彈出視窗樣式 */
+.view-1hop-btn {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #004e89;
+  border-radius: 6px;
+  background: rgba(0, 78, 137, 0.05);
+  color: #004e89;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  margin-top: 15px;
+}
+.view-1hop-btn:hover {
+  background: #004e89;
+  color: #fff;
+}
+
+.hop-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.hop-modal-content {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 1050px;
+  max-width: 95%;
+  height: 700px;
+  max-height: 90vh;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.hop-modal-content.maximized {
+  width: 98vw;
+  height: 96vh;
+  max-width: none;
+  max-height: none;
+  border-radius: 8px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.maximize-modal-btn {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.maximize-modal-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+  border-color: #999;
+}
+
+.hop-modal-header {
+  padding: 16px 24px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hop-modal-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #004e89;
+}
+
+.hop-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.hop-modal-close:hover {
+  color: #333;
+}
+
+.hop-modal-body {
+  padding: 24px;
+  background: #ffffff;
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+.hop-modal-graph {
+  flex: 1;
+  background: #fcfcfc;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hop-modal-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hop-modal-detail {
+  width: 320px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+}
+
+.modal-detail-header {
+  padding: 10px 16px;
+  background: #f0f2f5;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-detail-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #333;
+}
+
+.modal-detail-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}
+
+.modal-detail-content {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+  font-size: 12px;
+}
+
+.modal-action-btn {
+  width: 100%;
+  padding: 8px;
+  margin-top: 15px;
+  border: 1px solid #004e89;
+  background: #004e89;
+  color: #fff;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.modal-action-btn:hover {
+  opacity: 0.9;
+}
+
+.section-subtitle {
+  font-weight: bold;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  color: #666;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 2px;
+}
+
+.properties-list.compact .property-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.summary-text.compact {
+  font-size: 11px;
+  color: #555;
+  line-height: 1.4;
+  margin: 4px 0;
+}
+
+.edge-relation-header.compact {
+  font-weight: bold;
+  color: #004e89;
+  margin-bottom: 12px;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.modal-edge-group-item {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.group-item-title {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 4px;
+  border-bottom: 1px dashed #eee;
+  padding-bottom: 2px;
 }
 </style>

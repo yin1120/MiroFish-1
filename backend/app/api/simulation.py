@@ -307,8 +307,9 @@ def _check_simulation_prepared(simulation_id: str) -> tuple:
         # - running: 正在執行，說明準備早就完成了
         # - completed: 執行完成，說明準備早就完成了
         # - stopped: 已停止，說明準備早就完成了
+        # - paused: 已暫停，說明準備早就完成了
         # - failed: 執行失敗（但準備是完成的）
-        prepared_statuses = ["ready", "preparing", "running", "completed", "stopped", "failed"]
+        prepared_statuses = ["ready", "preparing", "running", "completed", "stopped", "failed", "paused"]
         if status in prepared_statuses and config_generated:
             # 獲取檔案統計資訊
             profiles_file = os.path.join(simulation_dir, "reddit_profiles.json")
@@ -466,7 +467,7 @@ def prepare_simulation():
         
         entity_types_list = data.get('entity_types')
         use_llm_for_profiles = data.get('use_llm_for_profiles', True)
-        parallel_profile_count = data.get('parallel_profile_count', 5)
+        parallel_profile_count = data.get('parallel_profile_count', 2)
         
         # ========== 同步獲取實體數量（在後臺任務啟動前） ==========
         # 這樣前端在呼叫prepare後立即就能獲取到預期Agent總數
@@ -489,6 +490,24 @@ def prepare_simulation():
         
         # 建立非同步任務
         task_manager = TaskManager()
+        
+        # 檢查是否已有相同模擬的準備任務正在運行，避免重複創建執行緒
+        existing_tasks = task_manager.list_tasks(task_type="simulation_prepare")
+        for task in existing_tasks:
+            if task.get("status") in [TaskStatus.PENDING.value, TaskStatus.PROCESSING.value]:
+                task_metadata = task.get("metadata", {})
+                if task_metadata.get("simulation_id") == simulation_id:
+                    logger.info(f"檢測到已有進行中的準備任務: task_id={task.get('task_id')}，直接返回該任務")
+                    return jsonify({
+                        "success": True,
+                        "data": {
+                            "simulation_id": simulation_id,
+                            "task_id": task.get("task_id"),
+                            "status": "preparing",
+                            "message": t('api.prepareStarted')
+                        }
+                    })
+        
         task_id = task_manager.create_task(
             task_type="simulation_prepare",
             metadata={
@@ -1291,6 +1310,62 @@ def get_simulation_config(simulation_id: str):
         }), 500
 
 
+@simulation_bp.route('/<simulation_id>/config/events', methods=['POST'])
+def update_scheduled_events(simulation_id: str):
+    """
+    更新模擬配置中的排程事件清單 (scheduled_events)
+    
+    請求（JSON）：
+        {
+            "scheduled_events": [
+                {
+                    "id": "evt_xxx",
+                    "round_num": 5,
+                    "event_type": "targeted_action" | "breaking_news",
+                    "platform": "all" | "twitter" | "reddit",
+                    "agent_id": 3,
+                    "agent_name": "...",
+                    "custom_author_name": "...",
+                    "action_type": "CREATE_POST",
+                    "content": "...",
+                    "description": "..."
+                },
+                ...
+            ]
+        }
+    """
+    try:
+        data = request.get_json() or {}
+        scheduled_events = data.get('scheduled_events', [])
+        
+        manager = SimulationManager()
+        success = manager.update_scheduled_events(simulation_id, scheduled_events)
+        
+        if not success:
+            return jsonify({
+                "success": False,
+                "error": t('api.configNotFound')
+            }), 404
+            
+        logger.info(f"成功更新模擬 {simulation_id} 的排程事件: 共 {len(scheduled_events)} 筆")
+        return jsonify({
+            "success": True,
+            "data": {
+                "simulation_id": simulation_id,
+                "scheduled_events_count": len(scheduled_events),
+                "scheduled_events": scheduled_events
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"更新排程事件失敗: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
+
 @simulation_bp.route('/<simulation_id>/config/download', methods=['GET'])
 def download_simulation_config(simulation_id: str):
     """下載模擬配置檔案"""
@@ -1527,6 +1602,11 @@ def start_simulation():
 
         # 檢查模擬是否已準備好
         manager = SimulationManager()
+        
+        # 若請求中帶有 scheduled_events，優先同步更新至配置檔案
+        if 'scheduled_events' in data and isinstance(data['scheduled_events'], list):
+            manager.update_scheduled_events(simulation_id, data['scheduled_events'])
+            
         state = manager.get_simulation(simulation_id)
 
         if not state:
@@ -1606,7 +1686,8 @@ def start_simulation():
             platform=platform,
             max_rounds=max_rounds,
             enable_graph_memory_update=enable_graph_memory_update,
-            graph_id=graph_id
+            graph_id=graph_id,
+            force=force
         )
         
         # 更新模擬狀態

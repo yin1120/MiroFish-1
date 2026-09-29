@@ -586,7 +586,7 @@ def build_graph():
                     message=t('progress.fetchingGraphData'),
                     progress=95
                 )
-                graph_data = builder.get_graph_data(graph_id)
+                graph_data = builder.get_graph_data(graph_id, resolve_duplicates=False)
                 
                 # 更新專案狀態
                 project.status = ProjectStatus.GRAPH_COMPLETED

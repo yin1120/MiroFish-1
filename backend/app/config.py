@@ -41,8 +41,8 @@ class Config:
     ALLOWED_EXTENSIONS = {'pdf', 'md', 'txt', 'markdown'}
     
     # 文書處理配置
-    DEFAULT_CHUNK_SIZE = 500  # 預設切塊大小
-    DEFAULT_CHUNK_OVERLAP = 50  # 預設重疊大小
+    DEFAULT_CHUNK_SIZE = 1200  # 預設切塊大小
+    DEFAULT_CHUNK_OVERLAP = 100  # 預設重疊大小
     
     # OASIS模擬配置
     OASIS_DEFAULT_MAX_ROUNDS = int(os.environ.get('OASIS_DEFAULT_MAX_ROUNDS', '10'))

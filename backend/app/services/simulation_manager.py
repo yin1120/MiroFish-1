@@ -235,7 +235,7 @@ class SimulationManager:
         defined_entity_types: Optional[List[str]] = None,
         use_llm_for_profiles: bool = True,
         progress_callback: Optional[callable] = None,
-        parallel_profile_count: int = 3
+        parallel_profile_count: int = 2
     ) -> SimulationState:
         """
         準備模擬環境（全程自動化）
@@ -411,6 +411,38 @@ class SimulationManager:
                 enable_reddit=state.enable_reddit
             )
             
+            # ========== 智慧對齊與修正 Agent ID (解決非人物實體過濾造成的 ID 不一致 Bug) ==========
+            try:
+                logger.info("正在對齊模擬配置的 Agent ID 與 Profiles 的 user_id...")
+                old_id_to_uuid = {cfg.agent_id: cfg.entity_uuid for cfg in sim_params.agent_configs}
+                uuid_to_new_id = {p.source_entity_uuid: p.user_id for p in profiles}
+                
+                # 更新並過濾 agent_configs
+                new_agent_configs = []
+                for cfg in sim_params.agent_configs:
+                    if cfg.entity_uuid in uuid_to_new_id:
+                        cfg.agent_id = uuid_to_new_id[cfg.entity_uuid]
+                        new_agent_configs.append(cfg)
+                sim_params.agent_configs = new_agent_configs
+                
+                # 更新 event_config.initial_posts 的 poster_agent_id
+                new_initial_posts = []
+                for post in sim_params.event_config.initial_posts:
+                    old_id = post.get("poster_agent_id")
+                    if old_id is not None:
+                        uuid = old_id_to_uuid.get(old_id)
+                        if uuid and uuid in uuid_to_new_id:
+                            post["poster_agent_id"] = uuid_to_new_id[uuid]
+                            new_initial_posts.append(post)
+                        else:
+                            logger.warning(f"初始貼文發布者 ID {old_id} (UUID: {uuid}) 未在人物 Profile 中找到，已跳過該貼文。")
+                    else:
+                        new_initial_posts.append(post)
+                sim_params.event_config.initial_posts = new_initial_posts
+                logger.info(f"Agent ID 對齊完成，共有 {len(sim_params.agent_configs)} 個 Agent 配置被保留，{len(sim_params.event_config.initial_posts)} 條初始發文。")
+            except Exception as e:
+                logger.error(f"Agent ID 對齊失敗: {e}")
+            
             if progress_callback:
                 progress_callback(
                     "generating_config", 70,
@@ -503,6 +535,27 @@ class SimulationManager:
         
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
+    
+    def update_scheduled_events(self, simulation_id: str, scheduled_events: List[Dict[str, Any]]) -> bool:
+        """更新模擬配置中的排程事件 (scheduled_events)"""
+        sim_dir = self._get_simulation_dir(simulation_id)
+        config_path = os.path.join(sim_dir, "simulation_config.json")
+        
+        if not os.path.exists(config_path):
+            return False
+            
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+            
+        if "event_config" not in config:
+            config["event_config"] = {}
+            
+        config["event_config"]["scheduled_events"] = scheduled_events
+        
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+            
+        return True
     
     def get_run_instructions(self, simulation_id: str) -> Dict[str, str]:
         """獲取執行說明"""

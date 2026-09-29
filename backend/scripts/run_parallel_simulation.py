@@ -89,6 +89,13 @@ _project_root = os.path.abspath(os.path.join(_backend_dir, '..'))
 sys.path.insert(0, _scripts_dir)
 sys.path.insert(0, _backend_dir)
 
+# 加载 camel-ai 工具 Strict 模式修补以支持本地 LLM 服务器 (如 vLLM)
+try:
+    import app.utils.camel_patch
+except Exception as e:
+    import sys
+    print(f"Error importing camel_patch: {e}", file=sys.stderr)
+
 # 加载项目根目录的 .env 文件（包含 LLM_API_KEY 等配置）
 from dotenv import load_dotenv
 _env_file = os.path.join(_project_root, '.env')
@@ -133,9 +140,13 @@ def disable_oasis_logging():
     
     for logger_name in oasis_loggers:
         logger = logging.getLogger(logger_name)
-        logger.setLevel(logging.CRITICAL)  # 只记录严重错误
-        logger.handlers.clear()
-        logger.propagate = False
+        if logger_name == "social.agent":
+            logger.setLevel(logging.INFO)  # 將 social.agent 的等級改為 INFO
+            logger.propagate = True
+        else:
+            logger.setLevel(logging.CRITICAL)  # 只記錄嚴重錯誤
+            logger.handlers.clear()
+            logger.propagate = False
 
 
 def init_logging_for_simulation(simulation_dir: str):
@@ -156,6 +167,7 @@ def init_logging_for_simulation(simulation_dir: str):
 
 
 from action_logger import SimulationLogManager, PlatformActionLogger
+from scheduled_events_handler import get_scheduled_events_for_round, prepare_scheduled_actions
 
 try:
     from camel.models import ModelFactory
@@ -182,6 +194,8 @@ TWITTER_ACTIONS = [
     ActionType.FOLLOW,
     ActionType.DO_NOTHING,
     ActionType.QUOTE_POST,
+    ActionType.CREATE_COMMENT,
+    ActionType.LIKE_COMMENT,
 ]
 
 # Reddit可用动作（不包含INTERVIEW，INTERVIEW只能通过ManualAction手动触发）
@@ -1150,7 +1164,10 @@ async def run_twitter_simulation(
     
     db_path = os.path.join(simulation_dir, "twitter_simulation.db")
     if os.path.exists(db_path):
-        os.remove(db_path)
+        try:
+            os.remove(db_path)
+        except Exception as e:
+            print(f"警告: 無法清除舊 Twitter 資料庫: {e}，這可能不影響後續執行")
     
     result.env = oasis.make(
         agent_graph=result.agent_graph,
@@ -1158,6 +1175,10 @@ async def run_twitter_simulation(
         database_path=db_path,
         semaphore=30,  # 限制最大并发 LLM 请求数，防止 API 过载
     )
+    # 為所有 agent 物件綁定 db_path，供 Self-Action Memory 檢索
+    if hasattr(result, 'agent_graph') and hasattr(result.agent_graph, 'agents'):
+        for ag in result.agent_graph.agents.values():
+            ag.db_path = db_path
     
     await result.env.reset()
     log_info("环境已启动")
@@ -1189,22 +1210,28 @@ async def run_twitter_simulation(
                     action_args={"content": content}
                 )
                 
-                if action_logger:
-                    action_logger.log_action(
-                        round_num=0,
-                        agent_id=agent_id,
-                        agent_name=agent_names.get(agent_id, f"Agent_{agent_id}"),
-                        action_type="CREATE_POST",
-                        action_args={"content": content}
-                    )
-                    total_actions += 1
-                    initial_action_count += 1
+                total_actions += 1
+                initial_action_count += 1
             except Exception:
                 pass
         
         if initial_actions:
             await result.env.step(initial_actions)
             log_info(f"已发布 {len(initial_actions)} 条初始帖子")
+            
+            # 從資料庫增量獲取真實動作（包括 post_id）並記錄
+            actual_actions, last_rowid = fetch_new_actions_from_db(
+                db_path, last_rowid, agent_names
+            )
+            for action_data in actual_actions:
+                if action_logger:
+                    action_logger.log_action(
+                        round_num=0,
+                        agent_id=action_data['agent_id'],
+                        agent_name=action_data['agent_name'],
+                        action_type=action_data['action_type'],
+                        action_args=action_data['action_args']
+                    )
     
     # 记录 round 0 结束
     if action_logger:
@@ -1235,6 +1262,13 @@ async def run_twitter_simulation(
         simulated_minutes = round_num * minutes_per_round
         simulated_hour = (simulated_minutes // 60) % 24
         simulated_day = simulated_minutes // (60 * 24) + 1
+        current_round = round_num + 1
+        
+        # 檢核並準備該輪的排程事件 (scheduled events)
+        matching_scheduled = get_scheduled_events_for_round(config, current_round, "twitter")
+        scheduled_actions, scheduled_meta = prepare_scheduled_actions(
+            result.env, matching_scheduled, db_path, agent_names, "twitter", log_info
+        )
         
         active_agents = get_active_agents_for_round(
             result.env, config, simulated_hour, round_num
@@ -1242,15 +1276,20 @@ async def run_twitter_simulation(
         
         # 无论是否有活跃agent，都记录round开始
         if action_logger:
-            action_logger.log_round_start(round_num + 1, simulated_hour)
-        
-        if not active_agents:
-            # 没有活跃agent时也记录round结束（actions_count=0）
-            if action_logger:
-                action_logger.log_round_end(round_num + 1, 0)
-            continue
+            action_logger.log_round_start(current_round, simulated_hour)
         
         actions = {agent: LLMAction() for _, agent in active_agents}
+        
+        # 若有排程動作，覆蓋或新增至當輪動作字典中
+        for sched_agent, manual_act in scheduled_actions.items():
+            actions[sched_agent] = manual_act
+        
+        if not actions:
+            # 没有活跃agent且无排程事件时记录round结束（actions_count=0）
+            if action_logger:
+                action_logger.log_round_end(current_round, 0)
+            continue
+        
         await result.env.step(actions)
         
         # 从数据库获取实际执行的动作并记录
@@ -1260,9 +1299,20 @@ async def run_twitter_simulation(
         
         round_action_count = 0
         for action_data in actual_actions:
+            aid = action_data['agent_id']
+            # 若為排程動作，增強元資料標籤
+            if aid in scheduled_meta:
+                meta = scheduled_meta[aid]
+                action_data['action_args']['is_scheduled'] = True
+                action_data['action_args']['description'] = meta.get('description', '')
+                action_data['action_args']['event_type'] = meta.get('event_type', '')
+                if meta.get('custom_author_name'):
+                    action_data['action_args']['custom_author_name'] = meta['custom_author_name']
+                    action_data['agent_name'] = meta['custom_author_name']
+            
             if action_logger:
                 action_logger.log_action(
-                    round_num=round_num + 1,
+                    round_num=current_round,
                     agent_id=action_data['agent_id'],
                     agent_name=action_data['agent_name'],
                     action_type=action_data['action_type'],
@@ -1272,7 +1322,7 @@ async def run_twitter_simulation(
                 round_action_count += 1
         
         if action_logger:
-            action_logger.log_round_end(round_num + 1, round_action_count)
+            action_logger.log_round_end(current_round, round_action_count)
         
         if (round_num + 1) % 20 == 0:
             progress = (round_num + 1) / total_rounds * 100
@@ -1341,7 +1391,10 @@ async def run_reddit_simulation(
     
     db_path = os.path.join(simulation_dir, "reddit_simulation.db")
     if os.path.exists(db_path):
-        os.remove(db_path)
+        try:
+            os.remove(db_path)
+        except Exception as e:
+            print(f"警告: 無法清除舊 Reddit 資料庫: {e}，這可能不影響後續執行")
     
     result.env = oasis.make(
         agent_graph=result.agent_graph,
@@ -1349,6 +1402,10 @@ async def run_reddit_simulation(
         database_path=db_path,
         semaphore=30,  # 限制最大并发 LLM 请求数，防止 API 过载
     )
+    # 為所有 agent 物件綁定 db_path，供 Self-Action Memory 檢索
+    if hasattr(result, 'agent_graph') and hasattr(result.agent_graph, 'agents'):
+        for ag in result.agent_graph.agents.values():
+            ag.db_path = db_path
     
     await result.env.reset()
     log_info("环境已启动")
@@ -1388,22 +1445,28 @@ async def run_reddit_simulation(
                         action_args={"content": content}
                     )
                 
-                if action_logger:
-                    action_logger.log_action(
-                        round_num=0,
-                        agent_id=agent_id,
-                        agent_name=agent_names.get(agent_id, f"Agent_{agent_id}"),
-                        action_type="CREATE_POST",
-                        action_args={"content": content}
-                    )
-                    total_actions += 1
-                    initial_action_count += 1
+                total_actions += 1
+                initial_action_count += 1
             except Exception:
                 pass
         
         if initial_actions:
             await result.env.step(initial_actions)
             log_info(f"已发布 {len(initial_actions)} 条初始帖子")
+            
+            # 從資料庫增量獲取真實動作（包括 post_id）並記錄
+            actual_actions, last_rowid = fetch_new_actions_from_db(
+                db_path, last_rowid, agent_names
+            )
+            for action_data in actual_actions:
+                if action_logger:
+                    action_logger.log_action(
+                        round_num=0,
+                        agent_id=action_data['agent_id'],
+                        agent_name=action_data['agent_name'],
+                        action_type=action_data['action_type'],
+                        action_args=action_data['action_args']
+                    )
     
     # 记录 round 0 结束
     if action_logger:
@@ -1434,6 +1497,13 @@ async def run_reddit_simulation(
         simulated_minutes = round_num * minutes_per_round
         simulated_hour = (simulated_minutes // 60) % 24
         simulated_day = simulated_minutes // (60 * 24) + 1
+        current_round = round_num + 1
+        
+        # 檢核並準備該輪的排程事件 (scheduled events)
+        matching_scheduled = get_scheduled_events_for_round(config, current_round, "reddit")
+        scheduled_actions, scheduled_meta = prepare_scheduled_actions(
+            result.env, matching_scheduled, db_path, agent_names, "reddit", log_info
+        )
         
         active_agents = get_active_agents_for_round(
             result.env, config, simulated_hour, round_num
@@ -1441,15 +1511,20 @@ async def run_reddit_simulation(
         
         # 无论是否有活跃agent，都记录round开始
         if action_logger:
-            action_logger.log_round_start(round_num + 1, simulated_hour)
-        
-        if not active_agents:
-            # 没有活跃agent时也记录round结束（actions_count=0）
-            if action_logger:
-                action_logger.log_round_end(round_num + 1, 0)
-            continue
+            action_logger.log_round_start(current_round, simulated_hour)
         
         actions = {agent: LLMAction() for _, agent in active_agents}
+        
+        # 若有排程動作，覆蓋或新增至當輪動作字典中
+        for sched_agent, manual_act in scheduled_actions.items():
+            actions[sched_agent] = manual_act
+        
+        if not actions:
+            # 没有活跃agent且无排程事件时记录round结束（actions_count=0）
+            if action_logger:
+                action_logger.log_round_end(current_round, 0)
+            continue
+        
         await result.env.step(actions)
         
         # 从数据库获取实际执行的动作并记录
@@ -1459,9 +1534,20 @@ async def run_reddit_simulation(
         
         round_action_count = 0
         for action_data in actual_actions:
+            aid = action_data['agent_id']
+            # 若為排程動作，增強元資料標籤
+            if aid in scheduled_meta:
+                meta = scheduled_meta[aid]
+                action_data['action_args']['is_scheduled'] = True
+                action_data['action_args']['description'] = meta.get('description', '')
+                action_data['action_args']['event_type'] = meta.get('event_type', '')
+                if meta.get('custom_author_name'):
+                    action_data['action_args']['custom_author_name'] = meta['custom_author_name']
+                    action_data['agent_name'] = meta['custom_author_name']
+            
             if action_logger:
                 action_logger.log_action(
-                    round_num=round_num + 1,
+                    round_num=current_round,
                     agent_id=action_data['agent_id'],
                     agent_name=action_data['agent_name'],
                     action_type=action_data['action_type'],
@@ -1471,7 +1557,7 @@ async def run_reddit_simulation(
                 round_action_count += 1
         
         if action_logger:
-            action_logger.log_round_end(round_num + 1, round_action_count)
+            action_logger.log_round_end(current_round, round_action_count)
         
         if (round_num + 1) % 20 == 0:
             progress = (round_num + 1) / total_rounds * 100

@@ -509,6 +509,69 @@
             </Transition>
           </div>
 
+          <!-- 时间线剧本排程 (Scheduled Events) -->
+          <div class="scheduled-events-section">
+            <div class="section-header-row">
+              <div class="header-title-group">
+                <span class="box-label">{{ $t('step2.scheduledEventsTitle') }}</span>
+                <span class="box-desc">{{ $t('step2.scheduledEventsDesc') }}</span>
+              </div>
+              <button type="button" class="btn-add-event" @click="openEventDialog()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                {{ $t('step2.addScheduledEvent') }}
+              </button>
+            </div>
+
+            <!-- 如果没有排程事件 -->
+            <div v-if="!scheduledEvents || scheduledEvents.length === 0" class="empty-events-state">
+              <span class="empty-hint">{{ $t('step2.noScheduledEventsHint') }}</span>
+            </div>
+
+            <!-- 排程事件列表 -->
+            <div v-else class="scheduled-events-list">
+              <div v-for="(event, idx) in scheduledEvents" :key="event.id || idx" class="scheduled-event-card">
+                <div class="event-badge-row">
+                  <span class="round-badge">
+                    <span class="r-label">ROUND</span>
+                    <span class="r-num">{{ event.round_num }}</span>
+                  </span>
+                  <span class="platform-tag" :class="event.platform || 'all'">
+                    {{ event.platform === 'twitter' ? 'Twitter' : event.platform === 'reddit' ? 'Reddit' : 'Twitter & Reddit' }}
+                  </span>
+                  <span class="type-tag" :class="event.event_type">
+                    {{ event.event_type === 'breaking_news' ? $t('step2.typeBreakingNews') : $t('step2.typeTargetedAction') }}
+                  </span>
+                  <div class="event-actions-buttons">
+                    <button type="button" class="icon-btn edit" @click="editScheduledEvent(idx)" :title="$t('common.edit')">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </button>
+                    <button type="button" class="icon-btn delete" @click="deleteScheduledEvent(idx)" :title="$t('common.delete')">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="event-agent-row">
+                  <span class="agent-avatar-small">{{ (event.custom_author_name || getAgentUsername(event.agent_id) || 'A')[0] }}</span>
+                  <span class="agent-display-name">{{ event.custom_author_name || getAgentUsername(event.agent_id) }}</span>
+                  <span v-if="event.agent_id !== undefined && !event.custom_author_name" class="agent-id-tag">Agent {{ event.agent_id }}</span>
+                  <span v-if="event.description" class="event-desc-pill">{{ event.description }}</span>
+                </div>
+
+                <p class="event-content-text">{{ event.content }}</p>
+              </div>
+            </div>
+          </div>
+
           <div class="action-group dual">
             <button 
               class="action-btn secondary"
@@ -529,8 +592,9 @@
     </div>
 
     <!-- Profile Detail Modal -->
-    <Transition name="modal">
-      <div v-if="selectedProfile" class="profile-modal-overlay" @click.self="selectedProfile = null">
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="selectedProfile" class="profile-modal-overlay" @click.self="selectedProfile = null">
         <div class="profile-modal">
           <div class="modal-header">
           <div class="modal-header-info">
@@ -557,10 +621,6 @@
             <div class="info-item">
               <span class="info-label">{{ $t('step2.profileModalCountry') }}</span>
               <span class="info-value">{{ selectedProfile.country || '-' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">{{ $t('step2.profileModalMbti') }}</span>
-              <span class="info-value mbti">{{ selectedProfile.mbti || '-' }}</span>
             </div>
           </div>
 
@@ -614,6 +674,7 @@
       </div>
       </div>
     </Transition>
+    </Teleport>
 
     <!-- Bottom Info / Logs -->
     <div class="system-logs">
@@ -628,7 +689,121 @@
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- 新增/編輯排程事件 Modal -->
+    <Teleport to="body">
+      <div v-if="showEventDialog" class="event-modal-overlay" @click.self="closeEventDialog">
+        <div class="event-modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-icon">⚡</span>
+            <h3>{{ editingEventIndex >= 0 ? $t('step2.editScheduledEvent') : $t('step2.addScheduledEvent') }}</h3>
+          </div>
+          <button type="button" class="btn-close" @click="closeEventDialog">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label">{{ $t('step2.eventRoundLabel') }} <span class="required">*</span></label>
+              <div class="input-with-hint">
+                <input 
+                  type="number" 
+                  v-model.number="eventForm.round_num" 
+                  min="1" 
+                  :max="maxRoundsLimit || 100" 
+                  class="form-input mono"
+                  placeholder="e.g. 5"
+                />
+                <span class="input-hint">{{ $t('step2.eventRoundHint', { max: maxRoundsLimit || '-' }) }}</span>
+              </div>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label">{{ $t('step2.eventPlatformLabel') }}</label>
+              <select v-model="eventForm.platform" class="form-select">
+                <option value="all">{{ $t('step2.platformAll') }}</option>
+                <option value="twitter">Twitter / Info Plaza</option>
+                <option value="reddit">Reddit / Topic Community</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ $t('step2.eventTypeLabel') }}</label>
+            <div class="radio-toggle-group">
+              <button 
+                type="button" 
+                class="toggle-btn" 
+                :class="{ active: eventForm.event_type === 'targeted_action' }"
+                @click="eventForm.event_type = 'targeted_action'"
+              >
+                {{ $t('step2.typeTargetedAction') }}
+              </button>
+              <button 
+                type="button" 
+                class="toggle-btn" 
+                :class="{ active: eventForm.event_type === 'breaking_news' }"
+                @click="eventForm.event_type = 'breaking_news'"
+              >
+                {{ $t('step2.typeBreakingNews') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 指定 Agent -->
+          <div v-if="eventForm.event_type === 'targeted_action'" class="form-group">
+            <label class="form-label">{{ $t('step2.selectAgentLabel') }} <span class="required">*</span></label>
+            <select v-model="eventForm.agent_id" class="form-select">
+              <option v-for="agent in availableAgents" :key="agent.agent_id" :value="agent.agent_id">
+                Agent {{ agent.agent_id }} - {{ agent.name }} ({{ agent.entity_type || 'User' }})
+              </option>
+            </select>
+          </div>
+
+          <!-- 全域突發新聞 / 自訂發布者 -->
+          <div v-else class="form-group">
+            <label class="form-label">{{ $t('step2.customAuthorLabel') }} <span class="required">*</span></label>
+            <input 
+              type="text" 
+              v-model="eventForm.custom_author_name" 
+              class="form-input" 
+              :placeholder="$t('step2.customAuthorPlaceholder')"
+            />
+            <span class="field-tip">{{ $t('step2.customAuthorTip') }}</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ $t('step2.eventDescLabel') }}</label>
+            <input 
+              type="text" 
+              v-model="eventForm.description" 
+              class="form-input" 
+              :placeholder="$t('step2.eventDescPlaceholder')"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">{{ $t('step2.eventContentLabel') }} <span class="required">*</span></label>
+            <textarea 
+              v-model="eventForm.content" 
+              rows="4" 
+              class="form-textarea"
+              :placeholder="$t('step2.eventContentPlaceholder')"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" @click="closeEventDialog">{{ $t('common.cancel') }}</button>
+          <button type="button" class="btn-submit" :disabled="!isEventFormValid" @click="saveEventFromDialog">
+            {{ editingEventIndex >= 0 ? $t('common.save') : $t('common.add') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+</div>
 </template>
 
 <script setup>
@@ -639,7 +814,8 @@ import {
   getPrepareStatus,
   getSimulationProfilesRealtime,
   getSimulationConfig,
-  getSimulationConfigRealtime
+  getSimulationConfigRealtime,
+  saveScheduledEvents
 } from '../api/simulation'
 
 const { t } = useI18n()
@@ -665,6 +841,20 @@ const expectedTotal = ref(null)
 const simulationConfig = ref(null)
 const selectedProfile = ref(null)
 const showProfilesDetail = ref(true)
+
+// 排程劇本事件狀態
+const scheduledEvents = ref([])
+const showEventDialog = ref(false)
+const editingEventIndex = ref(-1)
+const eventForm = ref({
+  round_num: 5,
+  platform: 'all',
+  event_type: 'targeted_action',
+  agent_id: 0,
+  custom_author_name: '',
+  description: '',
+  content: ''
+})
 
 // 日志去重：记录上一次输出的关键信息
 let lastLoggedMessage = ''
@@ -721,9 +911,11 @@ const displayProfiles = computed(() => {
 
 // 根据agent_id获取对应的username
 const getAgentUsername = (agentId) => {
+  const found = availableAgents.value?.find(a => a.agent_id === agentId)
+  if (found) return found.name
   if (profiles.value && profiles.value.length > agentId && agentId >= 0) {
     const profile = profiles.value[agentId]
-    return profile?.username || `agent_${agentId}`
+    return profile?.username || profile?.name || `agent_${agentId}`
   }
   return `agent_${agentId}`
 }
@@ -740,8 +932,118 @@ const addLog = (msg) => {
   emit('add-log', msg)
 }
 
+// 排程相關 Computed
+const availableAgents = computed(() => {
+  if (profiles.value && profiles.value.length > 0) {
+    return profiles.value.map((p, idx) => ({
+      agent_id: p.user_id !== undefined ? p.user_id : idx,
+      name: p.name || p.username || `Agent_${idx}`,
+      entity_type: p.profession || p.source_entity_type || 'User'
+    }))
+  }
+  if (simulationConfig.value?.agent_configs) {
+    return simulationConfig.value.agent_configs.map(a => ({
+      agent_id: a.agent_id,
+      name: a.entity_name || `Agent_${a.agent_id}`,
+      entity_type: a.entity_type || 'User'
+    }))
+  }
+  return []
+})
+
+const maxRoundsLimit = computed(() => {
+  if (useCustomRounds.value) {
+    return customMaxRounds.value
+  }
+  return autoGeneratedRounds.value || 100
+})
+
+const isEventFormValid = computed(() => {
+  const f = eventForm.value
+  if (!f.round_num || f.round_num < 1) return false
+  if (!f.content || !f.content.trim()) return false
+  if (f.event_type === 'targeted_action') {
+    return f.agent_id !== null && f.agent_id !== undefined
+  } else {
+    return Boolean(f.custom_author_name && f.custom_author_name.trim())
+  }
+})
+
+// 排程事件操作方法
+const openEventDialog = (index = -1) => {
+  editingEventIndex.value = index
+  if (index >= 0 && scheduledEvents.value[index]) {
+    const item = scheduledEvents.value[index]
+    eventForm.value = {
+      id: item.id || `evt_${Date.now()}`,
+      round_num: item.round_num || 5,
+      platform: item.platform || 'all',
+      event_type: item.event_type || 'targeted_action',
+      agent_id: item.agent_id !== undefined ? item.agent_id : (availableAgents.value[0]?.agent_id ?? 0),
+      custom_author_name: item.custom_author_name || '',
+      description: item.description || '',
+      content: item.content || ''
+    }
+  } else {
+    eventForm.value = {
+      id: `evt_${Date.now()}`,
+      round_num: Math.min(5, maxRoundsLimit.value || 5),
+      platform: 'all',
+      event_type: 'targeted_action',
+      agent_id: availableAgents.value[0]?.agent_id ?? 0,
+      custom_author_name: '',
+      description: '',
+      content: ''
+    }
+  }
+  showEventDialog.value = true
+}
+
+const closeEventDialog = () => {
+  showEventDialog.value = false
+  editingEventIndex.value = -1
+}
+
+const saveEventFromDialog = async () => {
+  if (!isEventFormValid.value) return
+  const newEvent = { ...eventForm.value }
+  if (newEvent.event_type === 'targeted_action') {
+    const found = availableAgents.value.find(a => a.agent_id === newEvent.agent_id)
+    if (found) newEvent.agent_name = found.name
+  }
+  if (editingEventIndex.value >= 0) {
+    scheduledEvents.value[editingEventIndex.value] = newEvent
+  } else {
+    scheduledEvents.value.push(newEvent)
+  }
+  // 依輪次升序排序
+  scheduledEvents.value.sort((a, b) => a.round_num - b.round_num)
+  closeEventDialog()
+
+  // 自動保存至後端
+  try {
+    await saveScheduledEvents(props.simulationId, scheduledEvents.value)
+    addLog(t('step2.scheduledEventsSavedLog', { count: scheduledEvents.value.length }))
+  } catch (e) {
+    console.warn('儲存排程事件失敗:', e)
+  }
+}
+
+const deleteScheduledEvent = async (index) => {
+  scheduledEvents.value.splice(index, 1)
+  try {
+    await saveScheduledEvents(props.simulationId, scheduledEvents.value)
+  } catch (e) {
+    console.warn('儲存排程事件失敗:', e)
+  }
+}
+
+const editScheduledEvent = (index) => {
+  openEventDialog(index)
+}
+
 // 处理开始模拟按钮点击
-const handleStartSimulation = () => {
+const handleStartSimulation = async () => {
   // 构建传递给父组件的参数
   const params = {}
   
@@ -752,6 +1054,17 @@ const handleStartSimulation = () => {
   } else {
     // 用户选择保持自动生成的轮数，不传递 max_rounds 参数
     addLog(t('log.startSimAutoRounds', { rounds: autoGeneratedRounds.value }))
+  }
+  
+  // 儲存最新的排程事件至後端
+  try {
+    if (scheduledEvents.value && scheduledEvents.value.length > 0) {
+      await saveScheduledEvents(props.simulationId, scheduledEvents.value)
+      params.scheduledEvents = scheduledEvents.value
+      addLog(t('step2.scheduledEventsSavedLog', { count: scheduledEvents.value.length }))
+    }
+  } catch (err) {
+    console.warn('儲存排程事件失敗:', err)
   }
   
   emit('next-step', params)
@@ -786,7 +1099,7 @@ const startPrepareSimulation = async () => {
     const res = await prepareSimulation({
       simulation_id: props.simulationId,
       use_llm_for_profiles: true,
-      parallel_profile_count: 5
+      parallel_profile_count: 2
     })
     
     if (res.success && res.data) {
@@ -1008,6 +1321,11 @@ const fetchConfigRealtime = async () => {
           const narrative = data.config.event_config.narrative_direction
           addLog(t('log.narrativeDirection', { direction: narrative.length > 50 ? narrative.substring(0, 50) + '...' : narrative }))
         }
+
+        // 載入排程劇本事件 (若存在)
+        if (data.config.event_config?.scheduled_events && Array.isArray(data.config.event_config.scheduled_events)) {
+          scheduledEvents.value = JSON.parse(JSON.stringify(data.config.event_config.scheduled_events))
+        }
         
         stopConfigPolling()
         phase.value = 4
@@ -1041,6 +1359,11 @@ const loadPreparedData = async () => {
           addLog(t('log.configSummaryAgents', { count: res.data.summary.total_agents }))
           addLog(t('log.configSummaryHours', { hours: res.data.summary.simulation_hours }))
           addLog(t('log.configSummaryPostsAlt', { count: res.data.summary.initial_posts_count }))
+        }
+
+        // 載入排程劇本事件 (若存在)
+        if (res.data.config.event_config?.scheduled_events && Array.isArray(res.data.config.event_config.scheduled_events)) {
+          scheduledEvents.value = JSON.parse(JSON.stringify(res.data.config.event_config.scheduled_events))
         }
 
         addLog(t('log.envSetupComplete'))
@@ -1816,12 +2139,15 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 99999;
   backdrop-filter: blur(4px);
+  box-sizing: border-box;
 }
 
 .profile-modal {
@@ -1936,10 +2262,7 @@ onUnmounted(() => {
   color: #333;
 }
 
-.info-value.mbti {
-  font-family: 'JetBrains Mono', monospace;
-  color: #FF5722;
-}
+
 
 /* 模块区域 */
 .modal-section {
@@ -2602,4 +2925,439 @@ onUnmounted(() => {
   transform: scale(0.95) translateY(10px);
   opacity: 0;
 }
+
+/* Scheduled Events Section */
+.scheduled-events-section {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed #E2E8F0;
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.header-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.box-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0F172A;
+  letter-spacing: 0.3px;
+}
+
+.box-desc {
+  font-size: 12px;
+  color: #64748B;
+}
+
+.btn-add-event {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #000;
+  color: #FFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-event:hover {
+  background: #FF5722;
+  transform: translateY(-1px);
+}
+
+.empty-events-state {
+  padding: 18px 16px;
+  background: #F8FAFC;
+  border: 1px dashed #CBD5E1;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.empty-hint {
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+.scheduled-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scheduled-event-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-left: 4px solid #FF5722;
+  border-radius: 6px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+}
+
+.scheduled-event-card:hover {
+  border-color: #CBD5E1;
+  border-left-color: #FF5722;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.event-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.round-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #000;
+  color: #FFF;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.round-badge .r-label {
+  color: #94A3B8;
+  font-size: 9px;
+}
+
+.round-badge .r-num {
+  color: #FF5722;
+}
+
+.platform-tag {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #EDF2F7;
+  color: #475569;
+  font-weight: 500;
+}
+
+.platform-tag.twitter {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+
+.platform-tag.reddit {
+  background: #FFEDD5;
+  color: #C2410C;
+}
+
+.type-tag {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.type-tag.targeted_action {
+  background: #F1F5F9;
+  color: #334155;
+}
+
+.type-tag.breaking_news {
+  background: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+}
+
+.event-actions-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.icon-btn {
+  background: transparent;
+  border: 1px solid #CBD5E1;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748B;
+  transition: all 0.15s ease;
+}
+
+.icon-btn.edit:hover {
+  color: #0284C7;
+  border-color: #0284C7;
+  background: #F0F9FF;
+}
+
+.icon-btn.delete:hover {
+  color: #EF4444;
+  border-color: #EF4444;
+  background: #FEF2F2;
+}
+
+.event-agent-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.agent-avatar-small {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #000;
+  color: #FFF;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-display-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.agent-id-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #64748B;
+  background: #E2E8F0;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.event-desc-pill {
+  font-size: 11px;
+  color: #D97706;
+  background: #FEF3C7;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.event-content-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #334155;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Event Modal */
+.event-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.event-modal-card {
+  background: #FFF;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  margin: auto;
+}
+
+.event-modal-card .modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #E2E8F0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #F8FAFC;
+}
+
+.event-modal-card .modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.event-modal-card .btn-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #64748B;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.event-modal-card .btn-close:hover {
+  color: #000;
+}
+
+.event-modal-card .modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.form-label .required {
+  color: #EF4444;
+}
+
+.form-label .tip {
+  font-size: 11px;
+  font-weight: 400;
+  color: #94A3B8;
+  margin-left: 4px;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #0F172A;
+  background: #FFF;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: #FF5722;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.field-tip {
+  font-size: 11px;
+  color: #64748B;
+  line-height: 1.4;
+}
+
+.radio-button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.radio-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  background: #FFF;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.radio-btn.active {
+  background: #000;
+  color: #FFF;
+  border-color: #000;
+}
+
+.event-modal-card .modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #F8FAFC;
+}
+
+.btn-cancel {
+  padding: 8px 16px;
+  border: 1px solid #CBD5E1;
+  background: #FFF;
+  color: #475569;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  background: #F1F5F9;
+}
+
+.btn-submit {
+  padding: 8px 18px;
+  background: #FF5722;
+  color: #FFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: #E64A19;
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 </style>
+

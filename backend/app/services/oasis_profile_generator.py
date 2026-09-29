@@ -21,6 +21,7 @@ from zep_cloud.client import Zep
 from ..config import Config
 from ..utils.logger import get_logger
 from ..utils.locale import get_language_instruction, get_locale, set_locale, t
+from ..utils.llm_client import LLMClient
 from .zep_entity_reader import EntityNode, ZepEntityReader
 
 logger = get_logger('mirofish.oasis_profile')
@@ -47,7 +48,6 @@ class OasisAgentProfile:
     # 額外人設資訊
     age: Optional[int] = None
     gender: Optional[str] = None
-    mbti: Optional[str] = None
     country: Optional[str] = None
     profession: Optional[str] = None
     interested_topics: List[str] = field(default_factory=list)
@@ -55,6 +55,9 @@ class OasisAgentProfile:
     # 來源實體資訊
     source_entity_uuid: Optional[str] = None
     source_entity_type: Optional[str] = None
+    
+    current_motivation: Optional[str] = None
+    current_state: Optional[str] = None
     
     created_at: str = field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
     
@@ -75,14 +78,16 @@ class OasisAgentProfile:
             profile["age"] = self.age
         if self.gender:
             profile["gender"] = self.gender
-        if self.mbti:
-            profile["mbti"] = self.mbti
         if self.country:
             profile["country"] = self.country
         if self.profession:
             profile["profession"] = self.profession
         if self.interested_topics:
             profile["interested_topics"] = self.interested_topics
+        if self.current_motivation:
+            profile["current_motivation"] = self.current_motivation
+        if self.current_state:
+            profile["current_state"] = self.current_state
         
         return profile
     
@@ -105,14 +110,16 @@ class OasisAgentProfile:
             profile["age"] = self.age
         if self.gender:
             profile["gender"] = self.gender
-        if self.mbti:
-            profile["mbti"] = self.mbti
         if self.country:
             profile["country"] = self.country
         if self.profession:
             profile["profession"] = self.profession
         if self.interested_topics:
             profile["interested_topics"] = self.interested_topics
+        if self.current_motivation:
+            profile["current_motivation"] = self.current_motivation
+        if self.current_state:
+            profile["current_state"] = self.current_state
         
         return profile
     
@@ -130,12 +137,13 @@ class OasisAgentProfile:
             "statuses_count": self.statuses_count,
             "age": self.age,
             "gender": self.gender,
-            "mbti": self.mbti,
             "country": self.country,
             "profession": self.profession,
             "interested_topics": self.interested_topics,
             "source_entity_uuid": self.source_entity_uuid,
             "source_entity_type": self.source_entity_type,
+            "current_motivation": self.current_motivation,
+            "current_state": self.current_state,
             "created_at": self.created_at,
         }
 
@@ -151,14 +159,7 @@ class OasisProfileGenerator:
     2. 生成非常詳細的人設（包括基本資訊、職業經歷、性格特徵、社交媒體行為等）
     3. 區分個人實體和抽象群體實體
     """
-    
-    # MBTI型別列表
-    MBTI_TYPES = [
-        "INTJ", "INTP", "ENTJ", "ENTP",
-        "INFJ", "INFP", "ENFJ", "ENFP",
-        "ISTJ", "ISFJ", "ESTJ", "ESFJ",
-        "ISTP", "ISFP", "ESTP", "ESFP"
-    ]
+
     
     # 常見國家列表
     COUNTRIES = [
@@ -193,10 +194,12 @@ class OasisProfileGenerator:
         if not self.api_key:
             raise ValueError("LLM_API_KEY 未配置")
         
-        self.client = OpenAI(
+        self.llm_client = LLMClient(
             api_key=self.api_key,
-            base_url=self.base_url
+            base_url=self.base_url,
+            model=self.model_name
         )
+        self.client = self.llm_client.client  # 保留相容性
         
         # Zep客戶端用於檢索豐富上下文
         self.zep_api_key = zep_api_key or Config.ZEP_API_KEY
@@ -217,10 +220,7 @@ class OasisProfileGenerator:
         if not entity.attributes:
             entity.attributes = {}
             
-        mbti_set = {
-            "INTJ", "INTP", "ENTJ", "ENTP", "INFJ", "INFP", "ENFJ", "ENFP",
-            "ISTJ", "ISFJ", "ESTJ", "ESFJ", "ISTP", "ISFP", "ESTP", "ESFP"
-        }
+
         
         genders_set = {"male", "female", "男", "女"}
         
@@ -230,14 +230,8 @@ class OasisProfileGenerator:
                 node_name = str(rel_node.get("name", "")).strip()
                 node_name_upper = node_name.upper()
                 
-                # 檢查是否為 MBTI
-                if node_name_upper in mbti_set:
-                    if not entity.attributes.get("mbti"):
-                        entity.attributes["mbti"] = node_name_upper
-                        logger.info(f"從關聯節點 '{node_name}' 還原 {entity.name} 的 MBTI 屬性為 '{node_name_upper}'")
-                
                 # 檢查是否為性別
-                elif node_name.lower() in genders_set:
+                if node_name.lower() in genders_set:
                     if not entity.attributes.get("gender"):
                         gender_val = "male" if node_name.lower() in ["male", "男"] else "female"
                         entity.attributes["gender"] = gender_val
@@ -272,12 +266,7 @@ class OasisProfileGenerator:
                 if not fact:
                     continue
                     
-                # 提取 MBTI
-                if not entity.attributes.get("mbti"):
-                    mbti_match = re.search(r'\b(INTJ|INTP|ENTJ|ENTP|INFJ|INFP|ENFJ|ENFP|ISTJ|ISFJ|ESTJ|ESFJ|ISTP|ISFP|ESTP|ESFP)\b', fact, re.IGNORECASE)
-                    if mbti_match:
-                        entity.attributes["mbti"] = mbti_match.group(1).upper()
-                        logger.info(f"從關係事實 '{fact}' 中提取並還原 {entity.name} 的 MBTI 屬性為 '{entity.attributes['mbti']}'")
+
                         
                 # 提取年齡
                 if not entity.attributes.get("age"):
@@ -308,7 +297,7 @@ class OasisProfileGenerator:
         entity: EntityNode, 
         user_id: int,
         use_llm: bool = True
-    ) -> OasisAgentProfile:
+    ) -> Optional[OasisAgentProfile]:
         """
         從Zep實體生成OASIS Agent Profile
         
@@ -318,8 +307,16 @@ class OasisProfileGenerator:
             use_llm: 是否使用LLM生成詳細人設
             
         Returns:
-            OasisAgentProfile
+            OasisAgentProfile 或 None (如果該實體不具備作為模擬 Agent 的發言資格)
         """
+        # 智慧分類與資格評估 (INDIVIDUAL / GROUP / SKIP)
+        agent_type = self._classify_agent_role_and_type(entity)
+        if agent_type is None:
+            logger.info(f"🚫 實體 {entity.name} 評估為非發言主體，跳過生成人設")
+            return None
+            
+        is_individual = (agent_type == "INDIVIDUAL")
+            
         # 清洗與還原屬性（防止 Zep 將個人屬性如 MBTI、國家、年齡、性別抽取成單獨的實體/節點）
         self._enrich_attributes_from_relations(entity)
         
@@ -333,13 +330,14 @@ class OasisProfileGenerator:
         context = self._build_entity_context(entity)
         
         if use_llm:
-            # 使用LLM生成詳細人設
+            # 使用LLM生成詳細人設，並將已判斷之 is_individual 直接傳入
             profile_data = self._generate_profile_with_llm(
                 entity_name=name,
                 entity_type=entity_type,
                 entity_summary=entity.summary,
                 entity_attributes=entity.attributes,
-                context=context
+                context=context,
+                is_individual=is_individual
             )
         else:
             # 使用規則生成基礎人設
@@ -360,14 +358,15 @@ class OasisProfileGenerator:
             friend_count=profile_data.get("friend_count", random.randint(50, 500)),
             follower_count=profile_data.get("follower_count", random.randint(100, 1000)),
             statuses_count=profile_data.get("statuses_count", random.randint(100, 2000)),
-            age=profile_data.get("age"),
-            gender=profile_data.get("gender"),
-            mbti=profile_data.get("mbti"),
+            age=profile_data.get("age") if is_individual else None,
+            gender=profile_data.get("gender") if is_individual else None,
             country=profile_data.get("country"),
             profession=profile_data.get("profession"),
             interested_topics=profile_data.get("interested_topics", []),
             source_entity_uuid=entity.uuid,
             source_entity_type=entity_type,
+            current_motivation=profile_data.get("current_motivation"),
+            current_state=profile_data.get("current_state"),
         )
     
     def _generate_username(self, name: str) -> str:
@@ -412,6 +411,18 @@ class OasisProfileGenerator:
             return results
         
         comprehensive_query = t('progress.zepSearchQuery', name=entity_name)
+        
+        # Zep API 限制搜尋詞長度上限為 400 字元，在此進行智慧截斷
+        if comprehensive_query and isinstance(comprehensive_query, str) and len(comprehensive_query) > 380:
+            truncated = comprehensive_query[:380]
+            punctuations = [',', ' ', '\n', '\r', '，', '。', '？', '！', ';', '；']
+            for char in punctuations:
+                last_idx = truncated.rfind(char)
+                if last_idx > int(380 * 0.7):
+                    comprehensive_query = truncated[:last_idx]
+                    break
+            else:
+                comprehensive_query = truncated
         
         def search_edges():
             """搜尋邊（事實/關係）- 帶重試機制"""
@@ -583,46 +594,79 @@ class OasisProfileGenerator:
         
         return "\n\n".join(context_parts)
     
-    def _is_individual_entity(self, entity_type: str) -> bool:
-        """判斷是否是個人型別實體"""
+    def _classify_agent_role_and_type(self, entity: EntityNode) -> Optional[str]:
+        """
+        評估實體是否具備作為模擬 Agent 的發言資格，並對其進行分類 (INDIVIDUAL / GROUP / SKIP)
+        採用 LangGPT 結構化框架設計的 Prompt
+        """
+        entity_name = entity.name
+        entity_type = entity.get_entity_type() or "Entity"
         entity_type_lower = entity_type.lower()
-        #return entity_type.lower() in self.INDIVIDUAL_ENTITY_TYPES #這是舊的，直接從白名單判斷，但是沒在上面就會變成OTHER
+        entity_summary = entity.summary or ""
         
-        # 1. 如果明確在個人清單中，就是個人
+        # 1. 快速判定白名單通道
         if entity_type_lower in self.INDIVIDUAL_ENTITY_TYPES:
-            return True
-            
-        # 2. 如果明確在群體清單中，就不是個人
+            logger.info(f"實體 {entity_name} ({entity_type}) 屬於個人白名單，自動判定為 INDIVIDUAL")
+            return "INDIVIDUAL"
         if entity_type_lower in self.GROUP_ENTITY_TYPES:
-            return False
+            logger.info(f"實體 {entity_name} ({entity_type}) 屬於群體白名單，自動判定為 GROUP")
+            return "GROUP"
             
-        # 3. 未知型別，使用 LLM 判斷
-        return self._classify_entity_type_with_llm(entity_type)
-        
-    def _classify_entity_type_with_llm(self, entity_type: str) -> bool:
-        """使用 LLM 判斷未知的實體型別是個人還是群體"""
+        # 2. 對於未知型別 (如 Location, Object, Concept 等)，呼叫 LLM 進行智慧三分類評估
         try:
-            logger.info(f"使用 LLM 分類未知實體型別: {entity_type}")
-            response = self.client.chat.completions.create(
-                model=self.model_name,
+            logger.info(f"使用 LangGPT 結構化 Prompt 評估 {entity_name} ({entity_type}) 的 Agent 角色與類型...")
+            
+            system_prompt = (
+                "# Role: Agent 資格與型別分類專家\n\n"
+                "## Profile:\n"
+                "- Author: Antigravity AI\n"
+                "- Description: 分析劇情推演中的實體，評估其是否具備模擬 Agent 的發言資格，並將其分類為適合個人或群體的發言模板，或者直接跳過。\n\n"
+                "## Output Categories:\n"
+                "1. **INDIVIDUAL**：\n"
+                "   - 所有人性化的角色、人物（如：學生、獵人、外婆、守衛）。\n"
+                "   - **特殊例外（重要靈性道具/神怪實體）**：在故事中明確具備自我意志、能夠與人交談、或者有獨立發言/表態能力的特殊實體（如：童話中會說話的魔鏡、會說話的茶壺、奇幻故事中擁有靈魂且能自主發言表達心意的魔杖）。\n"
+                "2. **GROUP**：\n"
+                "   - 能代表官方、群體發聲的機構、組織或平台（如：村莊官方帳號、新聞媒體、森林巡邏隊機構）。\n"
+                "3. **SKIP**：\n"
+                "   - 既不是人物，也不是發言機構的普通地點或道具（如：普通的森林、外婆的小木屋、紅色帽子、麵包）。這些實體直接跳過，不生成 Agent 人設。\n\n"
+                "## Workflow:\n"
+                "1. 閱讀輸入的實體資訊（名稱、型別、摘要）。\n"
+                "2. 判定其最適合的 Output Category。\n"
+                "3. 僅精確輸出以下三個標籤字串之一，不要包含引號、解釋或其他多餘文字：\n"
+                "   - INDIVIDUAL\n"
+                "   - GROUP\n"
+                "   - SKIP"
+            )
+            
+            user_content = (
+                f"實體名稱: {entity_name}\n"
+                f"實體型別: {entity_type}\n"
+                f"實體摘要: {entity_summary}\n"
+            )
+            
+            content = self.llm_client.chat(
                 messages=[
-                    {"role": "system", "content": "你是一個幫助分類實體型別的 AI 助手。你必須精確輸出 'INDIVIDUAL' 或 'GROUP'，不要輸出任何其他文字。"},
-                    {"role": "user", "content": f"請對這個實體型別進行分類：'{entity_type}'。這是一個具體的個人（例如：工程師、學生、公眾人物），還是一個群體/機構（例如：公司、團隊、大學、部門）？請回答 'INDIVIDUAL'（個人）或 'GROUP'（群體）。"}
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_content}
                 ],
                 temperature=0.1,
-                max_tokens=10
-            )
-            content = response.choices[0].message.content.strip().upper()
-            is_individual = "INDIVIDUAL" in content
-            logger.info(f"LLM 判斷 {entity_type} 為: {'個人(INDIVIDUAL)' if is_individual else '群體(GROUP)'}")
-            return is_individual
+                max_tokens=60,
+                enable_thinking=False
+            ).strip().upper()
+            
+            if "INDIVIDUAL" in content:
+                logger.info(f"評估結果: {entity_name} ({entity_type}) 判定為 INDIVIDUAL")
+                return "INDIVIDUAL"
+            elif "GROUP" in content:
+                logger.info(f"評估結果: {entity_name} ({entity_type}) 判定為 GROUP")
+                return "GROUP"
+            else:
+                logger.info(f"評估結果: {entity_name} ({entity_type}) 判定為 SKIP")
+                return None
+                
         except Exception as e:
-            logger.error(f"LLM 分類實體型別 {entity_type} 失敗: {e}，預設回退為個人")
-            return True
-    
-    def _is_group_entity(self, entity_type: str) -> bool:
-        """判斷是否是群體/機構型別實體"""
-        return entity_type.lower() in self.GROUP_ENTITY_TYPES
+            logger.error(f"智慧分類實體 {entity_name} 失敗: {e}，預設回退為 SKIP")
+            return None
     
     def _generate_profile_with_llm(
         self,
@@ -630,7 +674,8 @@ class OasisProfileGenerator:
         entity_type: str,
         entity_summary: str,
         entity_attributes: Dict[str, Any],
-        context: str
+        context: str,
+        is_individual: bool
     ) -> Dict[str, Any]:
         """
         使用LLM生成非常詳細的人設
@@ -640,7 +685,6 @@ class OasisProfileGenerator:
         - 群體/機構實體：生成代表性賬號設定
         """
         
-        is_individual = self._is_individual_entity(entity_type)
         if is_individual:
             prompt = self._build_individual_persona_prompt(
                 entity_name, entity_type, entity_summary, entity_attributes, context
@@ -650,69 +694,37 @@ class OasisProfileGenerator:
                 entity_name, entity_type, entity_summary, entity_attributes, context
             )
             
-        logger.info("使用LLM創造人設")
-
-        # 嘗試多次生成，直到成功或達到最大重試次數
-        max_attempts = 3
-        last_error = None
+        logger.info(f"使用 LLM 創造人設: {entity_name} ({'個人' if is_individual else '群體/機構'})")
         
-        for attempt in range(max_attempts):
-            try:
-                response = self.client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[
-                        {"role": "system", "content": self._get_system_prompt(is_individual)},
-                        {"role": "user", "content": prompt}
-                    ],
-                    #response_format={"type": "json_object"},#輸出成json格式
-                    temperature=0.7 - (attempt * 0.1)  # 每次重試降低溫度
-                    # 不設定max_tokens，讓LLM自由發揮
-                )
-                
-                content = response.choices[0].message.content
-                
-                # 檢查是否被截斷（finish_reason不是'stop'）
-                finish_reason = response.choices[0].finish_reason
-                if finish_reason == 'length':
-                    logger.warning(f"LLM輸出被截斷 (attempt {attempt+1}), 嘗試修復...")
-                    content = self._fix_truncated_json(content)
-                
-                # 嘗試解析JSON
-                try:
-                    result = json.loads(content)
-                    
-                    # 驗證必需欄位
-                    if "bio" not in result or not result["bio"]:
-                        result["bio"] = entity_summary[:200] if entity_summary else f"{entity_type}: {entity_name}"
-                    if "persona" not in result or not result["persona"]:
-                        result["persona"] = entity_summary or f"{entity_name}是一個{entity_type}。"
-                    
-                    logger.info(f"✅ 為 {entity_name} 正確讀取json:\n{json.dumps(result, ensure_ascii=False, indent=2)}")
-                    return result
-                    
-                except json.JSONDecodeError as je:
-                    logger.warning(f"❌JSON解析失敗 (attempt {attempt+1}): {str(je)[:80]}")
-                    logger.warning(f"❌導致解析失敗的原始 LLM 輸出: \n{content}")
-                    
-                    # 嘗試修復JSON
-                    result = self._try_fix_json(content, entity_name, entity_type, entity_summary)
-                    if result.get("_fixed"):
-                        del result["_fixed"]
-                        logger.info(f"✅成功修復 JSON: \n{json.dumps(result, ensure_ascii=False, indent=2)}")
-                        return result
-                    
-                    last_error = je
-                    
-            except Exception as e:
-                logger.warning(f"LLM呼叫失敗 (attempt {attempt+1}): {str(e)[:200]}")
-                last_error = e
-                import time
-                time.sleep(1 * (attempt + 1))  # 指數退避
+        system_prompt = self._get_system_prompt(is_individual)
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
+        ]
         
-        logger.warning(f"LLM生成人設失敗（{max_attempts}次嘗試）: {last_error}, 使用規則生成")
-        return self._generate_profile_rule_based(
-            entity_name, entity_type, entity_summary, entity_attributes
-        )
+        try:
+            result = self.llm_client.chat_json(
+                messages=messages,
+                temperature=0.7,
+                max_tokens=4096,
+                enable_thinking=False,
+                max_retries=3
+            )
+            
+            # 驗證必需欄位
+            if "bio" not in result or not result["bio"]:
+                result["bio"] = entity_summary[:200] if entity_summary else f"{entity_type}: {entity_name}"
+            if "persona" not in result or not result["persona"]:
+                result["persona"] = entity_summary or f"{entity_name}是一個{entity_type}。"
+            
+            logger.info(f"✅ 為 {entity_name} 成功生成人設 JSON")
+            return result
+            
+        except Exception as e:
+            logger.warning(f"LLM 生成人設失敗: {e}, 使用規則備用生成")
+            return self._generate_profile_rule_based(
+                entity_name, entity_type, entity_summary, entity_attributes
+            )
     
     def _fix_truncated_json(self, content: str) -> str:
         """修復被截斷的JSON（輸出被max_tokens限制截斷）"""
@@ -805,7 +817,7 @@ class OasisProfileGenerator:
     
     def _get_system_prompt(self, is_individual: bool) -> str:
         """獲取系統提示詞"""
-        base_prompt = "你是社交媒體使用者畫像生成專家。生成詳細、真實的人設用於輿論模擬,最大程度還原已有現實情況。必須返回有效的JSON格式，所有字串值不能包含未轉義的換行符。"
+        base_prompt = "你是故事推演與劇情角色人設生成專家。請生成詳細且符合故事背景的角色/機構人設用於情境推演，最大程度還原已有的故事走向。必須返回有效的JSON格式，所有字串值不能包含未轉義的換行符。"
         return f"{base_prompt}\n\n{get_language_instruction()}"
     
     def _build_individual_persona_prompt(
@@ -819,9 +831,10 @@ class OasisProfileGenerator:
         """構建個人實體的詳細人設提示詞"""
         
         attrs_str = json.dumps(entity_attributes, ensure_ascii=False) if entity_attributes else "無"
-        context_str = context[:3000] if context else "無額外上下文"  #取前3000字
+        context_str = context[:1600] if context else "無額外上下文"  #取前1600字
         
-        return f"""為實體生成詳細的社交媒體使用者人設,最大程度還原已有現實情況。
+        return f"""請為故事劇情推演中的角色生成詳細人設與當前心理狀態設定，最大程度還原已有的故事背景。這個角色將參與劇情的即時推演，請不要將其寫成一個普通的社交媒體網紅，而是要凸顯其在故事當前情境下的身份定位與面臨的衝突。
+此外，角色的性格設定與行為模式必須完全以輸入文件所描述的人物性格特徵、情感描述與行為事實為主，著重於表現其在故事危機下的真實反應。
 
 實體名稱: {entity_name}
 實體型別: {entity_type}
@@ -833,26 +846,26 @@ class OasisProfileGenerator:
 
 請生成JSON，包含以下欄位:
 
-1. bio: 社交媒體簡介，200字
-2. persona: 詳細人設描述（2000字的純文字），需包含:
-   - 基本資訊（年齡、職業、教育背景、所在地）
-   - 人物背景（重要經歷、與事件的關聯、社會關係）
-   - 性格特徵（MBTI型別、核心性格、情緒表達方式）
-   - 社交媒體行為（發帖頻率、內容偏好、互動風格、語言特點）
-   - 立場觀點（對話題的態度、可能被激怒/感動的內容）
-   - 獨特特徵（口頭禪、特殊經歷、個人愛好）
-   - 個人記憶（人設的重要部分，要介紹這個個體與事件的關聯，以及這個個體在事件中的已有動作與反應）
-3. age: 年齡數字（必須是整數）
-4. gender: 性別，必須是英文: "male" 或 "female"
-5. mbti: MBTI型別（如INTJ、ENFP等）
+1. current_motivation: 當前心理狀態與即時動機（150字左右的純文字），需包含：
+   - 該角色在當前故事時間點/情境下（例如：被吞入狼腹中、在屋外察覺異常）的真實心理反應與情緒狀態（恐懼、警惕、憤怒、果斷等）。
+   - 角色的即時行動意圖與動機（例如：大聲求救、冷靜觀察以尋求割開狼肚的機會、準備破門而入救援等）。
+   - 請特別注意：嚴禁預設、透露或寫死未來的結局（例如不能寫“等待著獵人成功擊敗大野狼並獲救”、“知道自己即將被擊敗”等），必須凸顯此時此刻勝負未定、高度緊張的即時博弈狀態。
+2. bio: 角色簡介，100字左右
+3. persona: 精煉人設描述（300字純文字），必須以「當前故事走向與事件」為主導（避免僅做空泛的性格與背景靜態描述），需包含:
+   - 角色在故事當前情境/事件下的心理狀態、當下心情，以及對當前故事走向的具體看法與態度（例如：若為大野狼，需解釋其吃掉外婆的冷酷心理狀態與得意心情，以及對接下來偽裝並等待小紅帽這個故事走向的看法）
+   - 角色故事定位（身份背景、與當前事件的直接關聯與已有動作）
+   - 性格與發言風格（完全以輸入文件所描述的性格事實、特徵與說話調性為主，著重於表現其日常說話習慣、口頭禪與溝通風格）
+   - 對事件的立場態度（對話題的態度、容易被激怒/感動的內容）
+4. age: 年齡數字（必須是整數）
+5. gender: 性別，必須是英文: "male" 或 "female"
 6. country: 國家（使用中文，如"中國"）
 7. profession: 職業
-8. interested_topics: 感興趣話題陣列
+8. interested_topics: 感興趣話題陣列（請填寫該角色在故事當前情境中最關切的具體事物、具體行動或愛好，例如：「採野花」、「烤餅乾」、「巡視森林」、「尋找外婆」。嚴禁使用社會學、學術分析、大眾輿論或抽象的社會議題詞彙，例如：「家庭照護」、「家庭內部入侵」、「安全感研究」、「教養政策」）
 
 重要:
 - 所有欄位值必須是字串或數字，不要使用換行符
-- persona必須是一段連貫的文字描述
-- persona文字中提及的年齡、性別、職業、MBTI等基本資訊，必須與獨立欄位(age, gender, profession, mbti)的值完全保持一致
+- persona與current_motivation必須分別是一段連貫的文字描述，不含任何換行符
+- persona文字中提及的年齡、性別、職業等基本資訊，必須與獨立欄位(age, gender, profession)的值完全保持一致
 - {get_language_instruction()} (gender欄位必須用英文male/female)
 - 內容要與實體資訊保持一致
 - age必須是有效的整數，gender必須是"male"或"female"
@@ -869,9 +882,10 @@ class OasisProfileGenerator:
         """構建群體/機構實體的詳細人設提示詞"""
         
         attrs_str = json.dumps(entity_attributes, ensure_ascii=False) if entity_attributes else "無"
-        context_str = context[:3000] if context else "無額外上下文"
+        context_str = context[:1600] if context else "無額外上下文"
         
-        return f"""為機構/群體實體生成詳細的社交媒體賬號設定,最大程度還原已有現實情況。
+        return f"""請為故事劇情推演中的群體/機構/地點生成詳細帳號設定與當前心理狀態設定，最大程度還原已有的故事背景。該實體將作為劇情的見證者或參與者，請不要將其寫成一個無關的普通社交媒體官帳，而是要凸顯其在故事當前情境下的功能定位與態度。
+此外，帳號風格設定必須高度依賴輸入文件中所描述的機構性質與背景事實，著重於該機構在當前故事危機下的回應。
 
 實體名稱: {entity_name}
 實體型別: {entity_type}
@@ -883,29 +897,28 @@ class OasisProfileGenerator:
 
 請生成JSON，包含以下欄位:
 
-1. bio: 官方賬號簡介，200字，專業得體
-2. persona: 詳細賬號設定描述（2000字的純文字），需包含:
-   - 機構基本資訊（正式名稱、機構性質、成立背景、主要職能）
-   - 賬號定位（賬號型別、目標受眾、核心功能）
-   - 發言風格（語言特點、常用表達、禁忌話題）
-   - 釋出內容特點（內容型別、釋出頻率、活躍時間段）
-   - 立場態度（對核心話題的官方立場、面對爭議的處理方式）
-   - 特殊說明（代表的群體畫像、運營習慣）
-   - 機構記憶（機構人設的重要部分，要介紹這個機構與事件的關聯，以及這個機構在事件中的已有動作與反應）
-3. age: 固定填30（機構賬號的虛擬年齡）
-4. gender: 固定填"other"（機構賬號使用other表示非個人）
-5. mbti: MBTI型別，用於描述賬號風格，如ISTJ代表嚴謹保守
+1. current_motivation: 當前心理狀態與即時動機（150字左右的純文字），需包含：
+   - 該機構/地點在當前故事危機下的官方心理反應與態度（如：保持高度警惕、悲痛並積極宣導安全、全力配合搜救等）。
+   - 當前最具體的運營目標與發聲動機（如：發布預警、呼籲尋找守護者救援、悼念並警示後人等）。
+   - 請特別注意：嚴禁預設未來的結局，保持對危機動態的即時反應，不要提及故事最終的勝負結果。
+2. bio: 官方/地點帳號簡介，100字左右，專業得體
+3. persona: 精煉帳號定位設定描述（200字左右純文字），需包含:
+   - 機構/地點基本資訊與主要職能（完全以輸入文件所描述的性質為主，正式名稱、性質、與事件的關聯）
+   - 發言風格與受眾（語言特點、常用表達、受眾群體）
+   - 官方立場與運營習慣（面對爭議的態度、發文特點與頻率）
+4. age: 固定填null（機構帳號沒有年齡）
+5. gender: 固定填null（機構帳號使用null表示無性別）
 6. country: 國家（使用中文，如"中國"）
 7. profession: 機構職能描述
-8. interested_topics: 關注領域陣列
+8. interested_topics: 關注領域陣列（請填寫該機構/地點在故事設定中直接關聯的具體業務、地理特徵或動作，例如：「提供庇護」、「警示鐘聲」、「森林防衛」、「發佈緊急動向」。嚴禁使用社會學、學術分析、大眾輿論或抽象的社會議題詞彙，例如：「公共危機管理」、「林業政策學」、「家庭政策」）
 
 重要:
-- 所有欄位值必須是字串或數字，不允許null值
-- persona必須是一段連貫的文字描述，不要使用換行符
-- persona文字中提及的基本資訊(如存在)，必須與獨立欄位(age, gender, profession, mbti)的值完全保持一致
-- {get_language_instruction()} (gender欄位必須用英文"other")
-- age必須是整數30，gender必須是字串"other"
-- 機構賬號發言要符合其身份定位"""
+- 除了 age 與 gender 之外，所有欄位值必須是字串或數字，不允許null值
+- persona與current_motivation必須分別是一段連貫的文字描述，不含任何換行符
+- persona文字中提及的基本資訊(如存在)，必須與獨立欄位(age, gender, profession)的值完全保持一致
+- {get_language_instruction()} (age與gender欄位必須用null)
+- age與gender必須是null
+- 機構帳號發言要符合其身份定位"""
     
     def _generate_profile_rule_based(
         self,
@@ -926,10 +939,11 @@ class OasisProfileGenerator:
                 "persona": f"{entity_name} is a {entity_type.lower()} who is actively engaged in academic and social discussions. They enjoy sharing perspectives and connecting with peers.",
                 "age": random.randint(18, 30),
                 "gender": random.choice(["male", "female"]),
-                "mbti": random.choice(self.MBTI_TYPES),
                 "country": random.choice(self.COUNTRIES),
                 "profession": "Student",
                 "interested_topics": ["Education", "Social Issues", "Technology"],
+                "current_motivation": "關注學術討論，希望與同儕交流。",
+                "current_state": "關注學術討論，希望與同儕交流。",
             }
         
         elif entity_type_lower in ["publicfigure", "expert", "faculty"]:
@@ -938,34 +952,37 @@ class OasisProfileGenerator:
                 "persona": f"{entity_name} is a recognized {entity_type.lower()} who shares insights and opinions on important matters. They are known for their expertise and influence in public discourse.",
                 "age": random.randint(35, 60),
                 "gender": random.choice(["male", "female"]),
-                "mbti": random.choice(["ENTJ", "INTJ", "ENTP", "INTP"]),
                 "country": random.choice(self.COUNTRIES),
                 "profession": entity_attributes.get("occupation", "Expert"),
                 "interested_topics": ["Politics", "Economics", "Culture & Society"],
+                "current_motivation": "以專業客觀的角度提供分析與指導。",
+                "current_state": "以專業客觀的角度提供分析與指導。",
             }
         
         elif entity_type_lower in ["mediaoutlet", "socialmediaplatform"]:
             return {
                 "bio": f"Official account for {entity_name}. News and updates.",
                 "persona": f"{entity_name} is a media entity that reports news and facilitates public discourse. The account shares timely updates and engages with the audience on current events.",
-                "age": 30,  # 機構虛擬年齡
-                "gender": "other",  # 機構使用other
-                "mbti": "ISTJ",  # 機構風格：嚴謹保守
+                "age": None,  # 機構沒有年齡
+                "gender": None,  # 機構沒有性別
                 "country": "中國",
                 "profession": "Media",
                 "interested_topics": ["General News", "Current Events", "Public Affairs"],
+                "current_motivation": "追蹤最新動態，提供即時的公開資訊與報導。",
+                "current_state": "追蹤最新動態，提供即時的公開資訊與報導。",
             }
         
         elif entity_type_lower in ["university", "governmentagency", "ngo", "organization"]:
             return {
                 "bio": f"Official account of {entity_name}.",
                 "persona": f"{entity_name} is an institutional entity that communicates official positions, announcements, and engages with stakeholders on relevant matters.",
-                "age": 30,  # 機構虛擬年齡
-                "gender": "other",  # 機構使用other
-                "mbti": "ISTJ",  # 機構風格：嚴謹保守
+                "age": None,  # 機構沒有年齡
+                "gender": None,  # 機構沒有性別
                 "country": "中國",
                 "profession": entity_type,
                 "interested_topics": ["Public Policy", "Community", "Official Announcements"],
+                "current_motivation": "配合官方政策，宣導並引導居民關注公共事務與安全防護。",
+                "current_state": "配合官方政策，宣導並引導居民關注公共事務與安全防護。",
             }
         
         else:
@@ -975,10 +992,11 @@ class OasisProfileGenerator:
                 "persona": entity_summary or f"{entity_name} is a {entity_type.lower()} participating in social discussions.",
                 "age": random.randint(25, 50),
                 "gender": random.choice(["male", "female"]),
-                "mbti": random.choice(self.MBTI_TYPES),
                 "country": random.choice(self.COUNTRIES),
                 "profession": entity_type,
                 "interested_topics": ["General", "Social Issues"],
+                "current_motivation": "保持警惕，在當前局勢下觀察事態的進一步發展。",
+                "current_state": "保持警惕，在當前局勢下觀察事態的進一步發展。",
             }
     
     def set_graph_id(self, graph_id: str):
@@ -1060,6 +1078,7 @@ class OasisProfileGenerator:
             """生成單個profile的工作函式"""
             set_locale(current_locale)
             entity_type = entity.get_entity_type() or "Entity"
+            logger.info(f"[{idx+1}/{total}] 🚀 開始為實體生成人設: {entity.name} ({entity_type})")
             
             try:
                 profile = self.generate_profile_from_entity(
@@ -1067,6 +1086,10 @@ class OasisProfileGenerator:
                     user_id=idx,
                     use_llm=use_llm
                 )
+                
+                # 如果實體不適合做為 Agent，profile 會是 None
+                if profile is None:
+                    return idx, None, None
                 
                 # 實時輸出生成的人設到控制檯和日誌
                 self._print_generated_profile(entity.name, entity_type, profile)
@@ -1117,14 +1140,23 @@ class OasisProfileGenerator:
                     save_profiles_realtime()
                     
                     if progress_callback:
-                        progress_callback(
-                            current, 
-                            total, 
-                            f"已完成 {current}/{total}: {entity.name}（{entity_type}）"
-                        )
+                        if profile is None:
+                            progress_callback(
+                                current, 
+                                total, 
+                                f"已跳過 {current}/{total}: {entity.name}（非發言主體）"
+                            )
+                        else:
+                            progress_callback(
+                                current, 
+                                total, 
+                                f"已完成 {current}/{total}: {entity.name}（{entity_type}）"
+                            )
                     
                     if error:
                         logger.warning(f"[{current}/{total}] {entity.name} 使用備用人設: {error}")
+                    elif profile is None:
+                        logger.info(f"[{current}/{total}] 已跳過非發言主體: {entity.name}")
                     else:
                         logger.info(f"[{current}/{total}] 成功生成人設: {entity.name} ({entity_type})")
                         
@@ -1144,11 +1176,18 @@ class OasisProfileGenerator:
                     # 實時寫入檔案（即使是備用人設）
                     save_profiles_realtime()
         
+        # 過濾掉被評估為 None (跳過) 的 profiles
+        final_profiles = [p for p in profiles if p is not None]
+        
+        # 重新整理並對齊 final_profiles 中的 user_id，確保 user_id 從 0 開始遞增且連續
+        for new_idx, p in enumerate(final_profiles):
+            p.user_id = new_idx
+            
         print(f"\n{'='*60}")
-        print(f"人設生成完成！共生成 {len([p for p in profiles if p])} 個Agent")
+        print(f"人設生成完成！共生成 {len(final_profiles)} 個Agent (已跳過 {total - len(final_profiles)} 個非發言主體)")
         print(f"{'='*60}\n")
         
-        return profiles
+        return final_profiles
     
     def _print_generated_profile(self, entity_name: str, entity_type: str, profile: OasisAgentProfile):
         """實時輸出生成的人設到控制檯（完整內容，不截斷）"""
@@ -1169,8 +1208,7 @@ class OasisProfileGenerator:
             f"【詳細人設】",
             f"{profile.persona}",
             f"",
-            f"【基本屬性】",
-            f"年齡: {profile.age} | 性別: {profile.gender} | MBTI: {profile.mbti}",
+            f"年齡: {profile.age} | 性別: {profile.gender}",
             f"職業: {profile.profession} | 國家: {profile.country}",
             f"興趣話題: {topics_str}",
             separator
@@ -1295,7 +1333,6 @@ class OasisProfileGenerator:
         - persona: 詳細人設
         - age: 年齡（整數）
         - gender: "male", "female", 或 "other"
-        - mbti: MBTI型別
         - country: 國家
         """
         data = []
@@ -1312,7 +1349,6 @@ class OasisProfileGenerator:
                 # OASIS必需欄位 - 確保都有預設值
                 "age": profile.age if profile.age else 30,
                 "gender": self._normalize_gender(profile.gender),
-                "mbti": profile.mbti if profile.mbti else "ISTJ",
                 "country": profile.country if profile.country else "中國",
             }
             
@@ -1321,6 +1357,10 @@ class OasisProfileGenerator:
                 item["profession"] = profile.profession
             if profile.interested_topics:
                 item["interested_topics"] = profile.interested_topics
+            if profile.current_motivation:
+                item["current_motivation"] = profile.current_motivation
+            if profile.current_state:
+                item["current_state"] = profile.current_state
             
             data.append(item)
         

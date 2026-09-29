@@ -185,3 +185,13 @@ export const getSimulationHistory = (limit = 20) => {
   return service.get('/api/simulation/history', { params: { limit } })
 }
 
+/**
+ * 儲存排程事件配置
+ * @param {string} simulationId
+ * @param {Array} scheduledEvents
+ */
+export const saveScheduledEvents = (simulationId, scheduledEvents) => {
+  return service.post(`/api/simulation/${simulationId}/config/events`, { scheduled_events: scheduledEvents })
+}
+
+

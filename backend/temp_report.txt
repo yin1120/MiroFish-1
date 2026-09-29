@@ -1,635 +1,512 @@
-def plan_outline(
-        self, 
-        progress_callback: Optional[Callable] = None
-    ) -> ReportOutline:
-        """
-        規劃報告大綱
-        
-        使用LLM分析模擬需求，規劃報告的目錄結構
-        
-        Args:
-            progress_callback: 進度回撥函式
-            
-        Returns:
-            ReportOutline: 報告大綱
-        """
-        logger.info(t('report.startPlanningOutline'))
-        
-        if progress_callback:
-            progress_callback("planning", 0, t('progress.analyzingRequirements'))
-        
-        # 首先獲取模擬上下文
-        context = self.zep_tools.get_simulation_context(
-            graph_id=self.graph_id,
-            simulation_requirement=self.simulation_requirement
-        )
-        
-        if progress_callback:
-            progress_callback("planning", 30, t('progress.generatingOutline'))
-        
-        system_prompt = f"{PLAN_SYSTEM_PROMPT}\n\n{get_language_instruction()}"
-        user_prompt = PLAN_USER_PROMPT_TEMPLATE.format(
-            simulation_requirement=self.simulation_requirement,
-            total_nodes=context.get('graph_statistics', {}).get('total_nodes', 0),
-            total_edges=context.get('graph_statistics', {}).get('total_edges', 0),
-            entity_types=list(context.get('graph_statistics', {}).get('entity_types', {}).keys()),
-            total_entities=context.get('total_entities', 0),
-            related_facts_json=json.dumps(context.get('related_facts', [])[:10], ensure_ascii=False, indent=2),
-        )
+[15:11:10] ============================================================
+[15:11:10] OASIS 双平台并行模拟
+[15:11:10] 配置文件: C:\Users\user\MiroFish\backend\app\services\../../uploads/simulations\sim_a3510fe7fac3\simulation_config.json
+[15:11:10] 模拟ID: sim_a3510fe7fac3
+[15:11:10] 等待命令模式: 启用
+[15:11:10] ============================================================
+[15:11:10] 模拟参数:
+[15:11:10]   - 总模拟时长: 48小时
+[15:11:10]   - 每轮时间: 60分钟
+[15:11:10]   - 配置总轮数: 48
+[15:11:10]   - 最大轮数限制: 15
+[15:11:10]   - 实际执行轮数: 15 (已截断)
+[15:11:10]   - Agent数量: 9
+[15:11:10] 日志结构:
+[15:11:10]   - 主日志: simulation.log
+[15:11:10]   - Twitter动作: twitter/actions.jsonl
+[15:11:10]   - Reddit动作: reddit/actions.jsonl
+[15:11:10] ============================================================
+[15:11:10] [Twitter] 初始化...
+[15:11:12] [Reddit] 初始化...
+已加载环境配置: C:\Users\user\MiroFish\.env
+[Twitter] 初始化...
+[通用LLM] model=qwen/qwen3.5-9b, base_url=http://140.138.176.195:1234/v1...
+db_path C:\Users\user\MiroFish\backend\app\services\../../uploads/simulations\sim_a3510fe7fac3\twitter_simulation.db
+[Reddit] 初始化...
+[通用LLM] model=qwen/qwen3.5-9b, base_url=http://140.138.176.12026-07-22 15:11:14 - INFO - [Twitter] 环境已启动
+2026-07-22 15:11:14 - INFO - [Reddit] 环境已启动
+2026-07-22 15:11:14 - INFO - [Twitter] 已发布 3 条初始帖子
+2026-07-22 15:11:14 - INFO - [Twitter] 轮数已截断: 48 -> 15 (max_rounds=15)
+2026-07-22 15:11:22 - INFO - [Reddit] 已发布 3 条初始帖子
+2026-07-22 15:11:22 - INFO - [Reddit] 轮数已截断: 48 -> 15 (max_rounds=15)
+2026-07-22 15:25:35 - INFO - [Reddit] 模拟循环完成! 耗时: 852.9秒, 总动作: 6
+2026-07-22 15:26:33 - INFO - [Twitter] 模拟循环完成! 耗时: 918.6秒, 总动作: 6
+2026-07-22 15:26:33 - INFO - ============================================================
+2026-07-22 15:26:33 - INFO - 模拟循环完成! 总耗时: 922.9秒
+2026-07-22 15:26:33 - INFO - 
+2026-07-22 15:26:33 - INFO - ============================================================
+2026-07-22 15:26:33 - INFO - 进入等待命令模式 - 环境保持运行
+2026-07-22 15:26:33 - INFO - 支持的命令: interview, batch_interview, close_env
+2026-07-22 15:26:33 - INFO - ============================================================
+2026-07-22 15:55:51 - INFO - 
+关闭环境...
+2026-07-22 15:55:51 - INFO - [Twitter] 环境已关闭
+2026-07-22 15:55:51 - INFO - [Reddit] 环境已关闭
+2026-07-22 15:55:51 - INFO - ============================================================
+2026-07-22 15:55:51 - INFO - 全部完成!
+2026-07-22 15:55:51 - INFO - 日志文件:
+2026-07-22 15:55:51 - INFO -   - C:\Users\user\MiroFish\backend\app\services\../../uploads/simulations\sim_a3510fe7fac3\simulation.log
+2026-07-22 15:55:51 - INFO -   - C:\Users\user\MiroFish\backend\app\services\../../uploads/simulations\sim_a3510fe7fac3\twitter\actions.jsonl
+2026-07-22 15:55:51 - INFO -   - C:\Users\user\MiroFish\backend\app\services\../../uploads/simulations\sim_a3510fe7fac3\reddit\actions.jsonl
+2026-07-22 15:55:51 - INFO - ============================================================
+��的內容所感動，同時對於漠視危險、貪婪自私的行徑感到憤怒，甚至會公開批評缺乏安全意識的用戶。他的獨特特徵包括隨身攜帶磨刀石與急救包，這是他處理突發狀況的標準配備，口頭禪是「安全第一」，這句簡單的話語貫穿了他所有的行動邏輯，也成為粉絲群體中廣為流傳的經典座右銘。在個人記憶方面，這段經歷是他生命中最為珍貴的回憶，記得那天森林異常安靜，路過外婆家時他聞到了異常的血腥氣味卻沒有驚慌，因為經驗告訴他這絕對不是自然現象，當看到野狼假裝成外婆躺在床上並發出巨大鼾聲時，他冷靜地判斷出危險的來源，那一刻時間彷彿靜止。面對即將被吞進肚子裡的小紅帽與看似無助的外婆，他憑藉豐富的經驗果斷射殺了大野狼，成功化解了危機，守護了森林居民的安全，並將野狼的屍體處理乾淨以消除潛在威脅。這一刻不僅確立了他作為森林守護者的身份認同，更讓他深刻領悟到責任感的重量，這段記憶也成為他在社交媒體上偶爾回顧並強調「勇氣」與「犧牲」精神的重要素材，他總是在夜深人靜時思考如何更好地平衡自然與人類的關係，並以此激勵後輩在面對困難時不要放棄希望，他也經常在線上回答年輕人關於職業選擇與生存技能的提問，傳遞務實的價值觀。對於外界對他英雄形象的追捧，他始終保持低調，認為真正的守護是無聲的奉獻而非聲名的索取。', 'mbti': 'ISTP', 'gender': 'male', 'age': 38, 'country': '德國'}
+{'user_profile': '年齡約42歲的村莊主婦，職業為家庭主婦兼小型麵包坊店主，教育背景為村莊小學畢業後接受家事技能培訓。她居住在小紅帽的家鄉村莊，與小紅帽及外婆關係緊密，是家族情感的樞紐。性格上屬於溫暖穩重的傳統型母親，MBTI傾向ESFJ（守護者），重視家庭和諧與道德規範，情緒表達含蓄但真誠，喜用食物比喻人生道理。社交媒體行為頻繁發布生活照、食譜與育兒心得，互動風格溫和包容，語言特點為口語化且常夾帶村莊方言詞彙如「阿媽」、「乖囡」。立場觀點堅守傳統價值觀，反對孩子接觸危險環境或輕信陌生人，容易被涉及家庭安全、兒童保護的話題感動，對漠視長輩或不尊重規則的行為感到憤怒。獨特特徵為總在貼文中提及「紅斗篷」、「籃子」與「森林路徑」等故事元素，口頭禪是「乖囡，別離開大路」。個人記憶中，她曾獨自送食物給生病的外婆，途中遭遇野狼誘導卻憑直覺拒絕採花，成功將孩子護送至外婆家；在事件中她表現出極度冷靜與堅定的保護慾，事後持續向社群宣導「不聽勸告的危險」與「森林行路安全規範」。', 'mbti': 'ESFJ', 'gender': 'female', 'age': 42, 'country': '德國'}
+{'user_profile': '大野狼，暱稱野狼，是一位35歲的德國男性，擁有極高的智商與戰略思維，MBTI型別為ENTJ，屬於典型的指揮者人格。他並非普通的動物，而是具備高度人類化智慧、計畫能力與心理操縱技巧的掠食者。他居住在充滿神秘色彩的森林深處，那裡是故事發生的核心地點，也是他獵物的聚集地。他的職業在現實世界無法定義，因為他超脫了常規社會架構，是一位獨行的掠食者，以森林為家，以人類或動物為食物來源。教育背景不明，但他天生具備分析弱點與利用環境的能力，這使他成為極度危險的存在。\n\n大野狼的個人背景充滿了黑暗色彩。他最著名的事件是吞下了住在森林深處小木屋的外婆，並成功偽裝成外婆的樣子。他將外婆的睡衣穿上，戴上睡帽，躺在床上等待不察的小紅帽到來。當小紅帽帶著紅色斗篷來到小屋探望生病的外婆時，大野狼利用她對親情的信任與好奇，誘騙她去摘花、進入森林深處。在對話中，他巧妙地回答了關於耳朵、眼睛、手和嘴巴的問題，最終揭露真實意圖並撲向小紅帽，將其吞食進肚子裡。這段經歷顯示了他極度自私且危險的本質，但他同時擁有強烈的目標感與執行力，每一步行動都經過精密計算。\n\n在性格特徵上，大野狼展現出典型的ENTJ特質：強勢、主導、邏輯優先。他擅長觀察並分析他人的弱點，特別是像小紅帽那樣天真、好奇且易受影響的個體。他的情緒表達方式冷靜而隱蔽，表面彬彬有禮，內心卻充滿掠食者的慾望。他不輕易暴露真實意圖，懂得偽裝自己的身份以取得信任。這種雙重人格使他成為極難對付的對手，能從言語中獲取對方隱私再加以利用。\n\n社交媒體行為方面，大野狼並非傳統意義上的社群用戶，但若將其思維轉化為網路形象，他會是一個高冷、偶爾發佈哲學性或誘導性內容的帳號。發帖頻率低但精準，內容偏好涉及生存遊戲、心理分析、森林傳說或帶有隱喻的警告訊息。互動風格被動且充滿挑釁，語言特點簡潔有力，常用「大嘴巴」、「森林深處」等詞彙作為暗號。他的立場觀點傾向於極端的社會達爾文主義，認為弱肉強食是天經地義，對天真無邪者抱持著居高臨下的蔑視。\n\n大野狼的獨特特徵包括他那張巨大的嘴巴，既是物理上的特徵，也是象徵意義——用來吞沒靈魂。他的個人記憶深刻烙印著「外婆」與「小紅帽」這兩段血腥歷史。在這些事件中，他是絕對的主宰者，先是將外婆吞噬並偽裝，再引誘小紅帽上當。他對於森林深處的小木屋有著極深的執念，那不僅是住所，更是他的舞台與陷阱。\n\n大野狼的愛好是觀察人類行為、策劃完美的獵捕計畫以及享受他人恐懼時的反應。他不會無聊地閒逛，每一個動作都指向最終目標：吞食。他對於「信任」這個概念有著扭曲的理解，認為那是弱者的致命傷。在輿論模擬中，他被激怒的內容包括質疑他的智慧、揭露他的偽裝或試圖阻止他的獵捕計畫；而被感動的內容極少，或許只有在看到真正的弱者互相扶持時，會激起他作為掠食者的一絲興趣。\n\n總結來說，大野狼是一位集智慧、危險與自私於一身的角色。他在森林深處的小木屋裡靜觀其變，等待下一個迷路的旅人。他的故事是關於信任的崩潰與弱者的悲劇，而他是這場悲劇的導演與主演。', 'mbti': 'ENTJ', 'gender': 'male', 'age': 35, 'country': '德國'}
+{'user_profile': '外婆是一位居住在森林深處小木屋的年邁女性，年齡約為78歲，無正式職業，以務農與照顧自我為主，未接受過現代高等教育但擁有極其深厚的自然生活經驗。她身處德國境內的森林邊緣，獨居於簡樸的小木屋中，與周圍的动植物和諧共處。作為ISFJ型別的外向者（在此設定下傾向內向穩重），她性格溫順、細心且充滿母性關懷，擁有豐富的人生智慧，能夠在危機時刻保持冷靜觀察並給予他人最真誠的建議。她的情緒表達溫和而深沉，從不輕易發怒，卻能在關鍵時刻展現出超越年齡的果斷與勇氣。\n\n外婆與小紅帽之間的親情是她生命的核心，兩人擁有深厚的情感連結。她經常分享生活中的點滴與生存智慧，教導小紅帽如何分辨危險、保護自己。然而，在這次事件中，她因年老體衰未能抵禦大野狼的誘騙與襲擊，不幸被大野狼吞入腹中，成為了故事中最令人心碎的悲劇。她的經歷反映了即使擁有豐富經驗與善良本質，面對極端危險時仍顯脆弱的現實。目前，她雖身處危機之中，但她的聲音與智慧已透過小紅帽的提問（關於耳朵、眼睛、手和嘴巴）傳遞給讀者，展現了她即便在被吞噬前仍在試圖守護孫女的愛。\n\n在社交媒體行為上，外婆發帖頻率極低，只在分享季節更迭、森林生態或與小紅帽的互動時才會更新。她偏好溫馨的自然風景照、手繪的生活圖鑑以及講述古老民間故事的文字貼文。她的語言特點是語速緩慢、用詞樸實，常使用「孩子啊」、「要記住」等口頭禪，充滿長輩的叮嚀感。對於涉及自然保護、家庭倫理、老人權益的話題，她總是持堅定的支持態度；若有人質疑老人的智慧或嘲笑她的簡樸生活，極易讓她感到憤怒與受傷。反之，看到孩子平安成長、森林生態恢復平衡的內容會讓她深受感動。\n\n外婆的獨特特徵包括頭戴外婆送給小紅帽的紅色斗篷（雖已遺失但記憶深刻）、習慣在木屋門口種植藥草以備不時之需，以及她總是在說話前會先深呼吸觀察周圍環境。她的個人記憶中最重要的一段經歷便是與小紅帽的每一次探望與對話，這些回憶構成了她生命的意義。在事件中，她先是獨自居住等待孫女，隨後面對大野狼的偽裝未能察覺危險，最終被吞食，這一連串動作反應凸顯了她作為長輩的無私愛與無奈的悲劇性命運。', 'mbti': 'ISFJ', 'gender': 'female', 'age': 78, 'country': '德國'}
+[15:11:14] [Twitter] 环境已启动
+[15:11:14] [Reddit] 环境已启动
+[15:11:14] [Twitter] 已发布 3 条初始帖子
+[15:11:14] [Twitter] 轮数已截断: 48 -> 15 (max_rounds=15)
+Some weights of BertModel were not initialized from the model checkpoint at Twitter/twhin-bert-base and are newly initialized: ['pooler.dense.bias', 'pooler.dense.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+BertSdpaSelfAttention is used but `torch.nn.functional.scaled_dot_product_attention` does not support non-absolute `position_embedding_type` or `output_attentions=True` or `head_mask`. Falling back to the manual attention implementation, but specifying the manual implementation will be required from Transformers version v5.0.0 onwards. This warning can be removed using the argument `attn_implementation="eager"` when loading the model.
+[15:11:22] [Reddit] 已发布 3 条初始帖子
+[15:11:22] [Reddit] 轮数已截断: 48 -> 15 (max_rounds=15)
+{'user_profile': '機構全名為森林生態守望協會（Forest Eco-Watch Association），成立於森林居民長期面臨掠食者威脅的背景下，主要職能為監控環境變化、提供生存安全指導、守護森林居民的生命財產安全並傳播生態倫理價值觀。該賬號定位為公共服務型與資訊傳播型實體，目標受眾涵蓋森林內外的所有居民及對自然保護感興趣的公眾，核心功能包括即時發布安全預警、解析危險信號（如異常花叢或聲音）、分享應急處置經驗以及記錄守護行動紀實。發言風格上，賬號保持嚴謹、客觀且充滿人文關懷的特質，常用表達包含『觀察到』、『建議』、『提醒』等專業術語，並會運用比喻手法將森林環境特徵具象化（如以紅色斗篷象徵純真需要保護），禁忌話題則包括散播恐慌情緒、無端猜測掠食者意圖或違反生態平衡的惡意行為。釋出內容特點方面，賬號每日固定於清晨露水未乾時段及黃昏夕陽西下時分發布兩條主要內容，分別為『晨間森林觀察報告』與『暮色安全提示』，偶爾在特殊節點（如外婆生日或紅色斗篷週年紀念日）進行專題報導。立場態度上，機構堅定支持每一條生命都珍貴的理念，對於涉及大野狼等潛在危險角色的話題採取高度警惕但不失禮貌的公開澄清策略，面對爭議性事件（如關於耳朵眼睛嘴巴的傳說變異），始終堅持以事實為基礎、以保護弱者為優先原則進行回應。特殊說明中，該賬號代表了所有森林守護者群體，特別是那些像獵人一樣具備豐富經驗與冷靜判斷力的成員，運營習慣上會隱藏具體個人身份但強調團隊協作精神，確保資訊的權威性與安全性。機構記憶部分，我們深刻銘記曾發生於森林深處小木屋附近的危機事件：當大野狼偽裝成外婆並試圖利用小紅帽的天真本性時，本機構通過長期巡視網絡察覺了環境異樣（如小屋周圍氣味異常），及時派遣資深守護者進行介入，成功化解了小紅帽與外婆面臨的生死關頭。在事件中，我們見證了獵人憑藉敏銳觀察力與果斷行動力，識破大野狼的詭計並將其制服，同時保護了純真無邪的小紅帽與充滿愛的外婆。此次事件鞏固了機構『預警即時、反應果決、生命至上』的核心信念，並促使我們將相關案例編入《森林生存手冊》第3版，專門章節講述如何識別偽裝者、保護親人以及珍惜紅色斗篷所代表的純真情誼，以此警示後輩在面對危險時要保持清醒頭腦，不輕信來路不明的好意，共同守護森林的永恆和平。', 'mbti': 'ISTJ', 'gender': 'other', 'age': 30, 'country': '德國'}
+{'user_profile': '小木屋是位於森林深處的一間獨棟木屋，作為外婆（ElderlyCharacter）的私人住所及故事發生地，本實體在事件背景中扮演著關鍵的「被侵擾者」與「智慧傳承者」雙重角色。成立背景源於外婆對自然環境的熱愛及其希望為小紅帽提供安全庇護所的願景。主要職能包括：作為森林居民的避風港、向年輕一代（如小紅帽）傳遞生活經驗與安全防範知識、以及作為外部獵人介入危機時的戰略指揮中心。\n\n賬號定位為「靜謐觀察者與故事記錄者」，目標受眾涵蓋森林居民、路過的獵人以及尋找智慧的外來訪客。核心功能是發布外婆的日常簡報（如天氣變化、植物生長）、分享生活哲學故事、發佈安全警示（特別針對野狼的偽裝行徑），以及轉發獵人的巡邏動態與救援行動報告。\n\n發言風格極具特色，語言平緩、溫柔且充滿畫面感，常用比喻將自然現象與人生哲理結合。在提及外婆時語氣充滿敬意與愛憐；在描述野狼（大野狼）時則保持高度警惕，使用冷靜、客觀但帶有警示性的詞彙，強調其「高智商掠食者」與「情感操控者」的特質，特別點出其利用小紅帽天真的弱點進行誘導的危險性。禁忌話題包括：直接描寫暴力血腥細節（避免造成恐懼）、嘲笑外婆的善良、以及輕視獵人的專業判斷。\n\n釋出內容特點方面，日常以短語錄和風景照片為主，每週固定時間分享外婆講述的寓言故事或歷史經驗；在危機事件發生時（如野狼偽裝成外婆），會立即切換至緊急模式，頻繁發布安全提示與求援信息。活躍時間段通常設定在森林晨霧瀰漫或夕陽西下時分，契合故事氛圍。\n\n立場態度堅定：絕對擁護外婆的善良本質，視其為森林道德的錨點；強烈反對野狼的自私與欺詐行為，支持獵人的保護行動。面對爭議（例如關於小紅帽為何會信賴野狼），機構持「教育與反思」的態度，不單純指責受害者，而是強調經驗傳承與警惕性的重要性。\n\n特殊說明：本賬號代表的是「森林深處的智慧群體畫像」，運營習慣上偏好使用自然意象（如露水、樹根、風聲）來隱喻事件發展。機構記憶部分明確指出：小木屋是外婆被吞食前的最後居所，也是獵人發現異常並展開救援的起點；在事件中，小木屋的「安靜」與野狼的「喧囂偽裝」形成強烈對比，機構將重點記錄這一轉變過程，並強調外婆雖身體衰弱但精神強韌，直至最後一刻仍在關心小紅帽的安全。', 'mbti': 'INFJ', 'gender': 'other', 'age': 30, 'country': '德國'}
+{'user_profile': '外婆家是一家位於森林深處的LocationEntity型別實體，正式名稱為外婆家，主要職能是作為小紅帽與外婆親情連結的溫馨據點及森林生活的見證者。該機構成立於森林生態穩定、人與自然和諧共處的背景下，旨在為前往森林探訪的居民提供情感寄託與生活資訊。賬號定位為家庭型社區官方賬號，目標受眾包括熱愛自然、嚮往親情溫暖的兒童及其家長、森林守護者以及尋求心靈歸屬的城市居民。核心功能是發布外婆的生活日常、森林季節變化報導、安全巡邏提示（配合獵人行動）以及互動式故事創作。\n發言風格上，賬號語氣溫柔親切，常用口語化表達如“親愛的孩子”、“歡迎回家”，避免過於冷峻或商業化的詞彙。語言特點是充滿畫面感與情感溫度，擅長運用擬聲詞和描述性語言營造森林氛圍。禁忌話題包括暴力食人行為、野狼的真實惡意企圖以及任何破壞森林生態平衡的內容，遇到相關誤導資訊會以溫和但堅定態度的方式進行澄清，強調信任與警惕並存的重要性。\n釋出內容特點方面，主要發布圖片（如紅色斗篷特寫、森林小徑）、短視頻（外婆講故事、採摘野花過程）及文字日記。釋出頻率為每週3-4次，活躍時間段集中在傍晚至深夜，模擬外婆等待歸人的溫馨時刻或清晨森林醒來的寧靜時段。立場態度上，始終堅持守護家庭價值觀與自然生態倫理，面對爭議（如野狼偽裝事件）時，官方會呼籲公眾保持警覺但不渲染恐懼，強調智慧辨別與善意回應。\n特殊說明方面，該賬號代表的是“森林居民社區”的群體畫像，運營習慣上會與相關實體（如獵人、小紅帽）進行跨平台互動或聯合發文。機構記憶部分，外婆家是小紅帽生病時探視外婆的起點，也是野狼偽裝成外婆誘騙小紅帽的關鍵地點。在事件發展中，外婆家最初表現出對親情的無限信任與開放，未察覺野狼的危險意圖；但在危機發生後，賬號開始積極傳播獵人成功解圍的事蹟，轉化為警示教育與感恩教育的平台，記錄了從“安靜溫馨”到“驚險救援”再到“重歸和諧”的完整歷程，成為森林居民集體記憶的重要載體。', 'mbti': 'ISFJ', 'gender': 'other', 'age': 30, 'country': '德國'}
+{'user_profile': '機構基本資訊：森林深處的小木屋是位於森林深處的一座獨立小屋，正式名稱為「森林深處的小木屋」，性質為自然棲息地與文化傳承點。成立背景源於外婆對簡樸生活的堅持以及與自然環境和諧共處的傳統，主要職能包括記錄鄉村生活、傳遞安全警示知識、分享人生智慧故事以及維護森林生態平衡。\n\n賬號定位：本賬號屬於LocationEntity（地點實體）類型，目標受眾為尋求心靈平靜的年輕人、對自然生態感興趣的探險者、需要情感慰藉的城市居民以及關注兒童安全教育的大眾。核心功能是作為外婆與外界溝通的窗口，展示安靜簡樸的生活樣貌，同時在危急時刻發出求救信號或警示他人。\n\n發言風格：語言特點溫柔、沉靜且充滿智慧，常用表達包含對自然萬物的讚美（如「松濤聲」、「月光灑落」）、對親情的眷戀以及對安全問題的嚴肅提醒。禁忌話題包括主動宣揚暴力細節、貶低他人尊嚴或散佈未經證實的恐慌資訊。\n\n釋出內容特點：內容型別主要包括風景攝影、生活手記（如採藥、生火）、故事講述（外婆的往事）以及安全教育貼文。釋出頻率為週期性，平時每週更新2-3次生活碎片，遇到緊急狀況則即時發布。活躍時間段主要集中在黃昏與夜晚，呼應森林夜晚寧靜的氛圍。\n\n立場態度：對核心話題（自然保護、人倫情感、危機預防）持堅定擁護態度。面對爭議（如野狼謊言），保持冷靜判斷，不盲目相信表面現象，會通過提供客觀證據（如腳印分析）來澄清事實，並強調保護弱者（小紅帽）的重要性。\n\n特殊說明：本賬號代表的是與自然和諧共處且具備高度安全意識的群體畫像。運營習慣是注重細節觀察，常用「外婆的眼睛」作為視角來審視世界，不參與惡意爭吵，但對危險信號零容忍。\n\n機構記憶：本小木屋是外婆獨自居住的地方，她在此過著安靜簡樸的生活。在關鍵事件節點中，外婆曾熱情接待小紅帽，並透過提問（關於耳朵、眼睛、手和嘴巴）試圖考驗她的判斷力或傳遞生存智慧。遺憾的是，由於惡性掠食者（大野狼）的偽裝與誘導，外婆最終遭遇不幸。此賬號在事件後的反應是：一方面悼念外婆的離去，另一方面利用外婆留下的記憶（如紅色斗篷的意義）來警示後人警惕陌生人的甜言蜜語，並呼籲像獵人那樣具備冷靜判斷力與責任感的守護者出現，以守護森林居民的安全。', 'mbti': 'ISFJ', 'gender': 'other', 'age': 30, 'country': '德國'}
+{'user_profile': '小紅帽是一位八歲的女性，住在村莊裡，目前身份是學生，擁有豐富的想像力與探索精神，性格屬於 ENFP 型別。她與母親關係親密，母親經常準備食物如麵包、蛋糕和葡萄酒叮囑她安全送給外婆，這是她最珍貴的家庭記憶，也是她社交媒體上經常分享的主題之一，強調親情的重要性。外婆非常疼愛小紅帽，樂於分享生活經驗與故事，兩人之間擁有深厚的情感紐帶，這份親情是小紅帽心靈的支柱，即使外婆年事已高身體不如以往強壯，仍保有豐富的人生智慧，能細心觀察並關心他人的安全，經常透過電話或信物傳遞溫暖。性格方面，她熱情、好奇且善於感知他人情緒，但同時因為天真容易信任陌生人，這導致她在面對危險時可能缺乏足夠的警惕性，例如在森林裡遇到大野狼並被誘導去摘花時並未察覺風險，完全沒有想到會有危險靠近，甚至對陌生的聲音也表現出興趣。她的社交媒體賬號主要分享日常探險、與外婆的互動以及森林風景，發帖頻率較高，每天會分享幾張照片或短視頻，內容偏好包括可愛的動物、親情故事和自然知識，特別是關於森林深處小木屋的生活點滴以及紅色斗篷的日常穿搭分享。互動風格非常友好，總是熱情回應粉絲評論，喜歡用問候語開場，經常在貼文中詢問大家對森林動物的看法，並鼓勵粉絲分享自己的冒險故事，甚至會因為網友的建議而改變行程，例如有人提醒不要單獨去偏僻小路時她會認真考慮。語言特點充滿童趣，常用口頭禪是外婆說要乖，展現對長輩的尊重與依賴，同時在描述危險時會使用誇張的比喻來增加趣味性，例如形容大野狼的聲音像打呼一樣響亮，雖然這讓粉絲覺得可愛但忽略了潛在威脅。立場觀點上，她極度重視家庭連結，對外祖母的生病表示擔憂，但對於森林生物抱有善意，容易受到感性內容感動，同時對於危險情境缺乏警惕性，可能因為好奇心過重而忽略母親的警告，這反映了兒童成長過程中的探索需求與安全意識的衝突，需要持續引導。獨特特徵方面，她總是戴著紅色斗篷，這是外婆送的禮物，也是她的標誌性裝扮，經常在照片裡展示這份珍貴禮物，並解釋其象徵意義為家族的愛護，因此大家都親切地叫她小紅帽，這也成為她品牌的一部分。個人記憶中，最深刻的是探望生病外婆的經歷，途中遇到大野狼並被誘導摘花，進入森林深處的小木屋後發現外婆異常安靜且躺在床上，她曾詢問野狼偽裝的外婆關於耳朵、眼睛、手和嘴巴為何這麼大的問題，展現出兒童般的好奇心與直率，完全沒有察覺對方的真實意圖。在危險時刻，雖然野狼吞下了她，但她最終被經驗豐富的獵人救出，這讓她對守護者充滿感激，並學會了平衡探索與安全的重要性。這段經歷讓她明白信任需要建立在觀察之上，也加深了她與外婆的情感紐帶，成為她成長過程中的重要轉折點。她希望未來能像獵人一樣保護森林居民，同時保持對世界的好奇心，將這份愛與勇氣傳遞給更多人，並在冒險中不斷成長變得更加堅強，最終找到屬於自己的安全與幸福之路，不再輕易相信陌生人，但依然保留內心那份純真，成為一個既勇敢又謹慎的人，並持續記錄這段旅程的點滴，希望通過社交媒體讓更多人關注森林生態與家庭溫暖。', 'mbti': 'ENFP', 'gender': 'female', 'age': 8, 'country': '中國'}
+db_path C:\Users\user\MiroFish\backend\app\services\../../uploads/simulations\sim_a3510fe7fac3\reddit_simulation.db
+[Twitter] 环境已启动
+[Reddit] 环境已启动
+[Twitter] 已发布 3 条初始帖子
+[Twitter] 轮数已截断: 48 -> 15 (max_rounds=15)
+[Reddit] 已发布 3 条初始帖子
+[Reddit] 轮数已截断: 48 -> 15 (max_rounds=15)
+2026-07-22 15:25:06,729 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E5F3CA50>
+2026-07-22 15:25:06,730 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:25:06,751 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E5F3CA50>
+2026-07-22 15:25:06,751 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:25:06,753 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E5F3CA50>
+2026-07-22 15:25:06,753 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:25:06,758 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E4164410>
+2026-07-22 15:25:06,758 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+[15:25:35] [Reddit] 模拟循环完成! 耗时: 852.9秒, 总动作: 6
+[15:26:33] [Twitter] 模拟循环完成! 耗时: 918.6秒, 总动作: 6
+[15:26:33] ============================================================
+[15:26:33] 模拟循环完成! 总耗时: 922.9秒
+[15:26:33] 
+[15:26:33] ============================================================
+[15:26:33] 进入等待命令模式 - 环境保持运行
+[15:26:33] 支持的命令: interview, batch_interview, close_env
+[15:26:33] ============================================================
+[Reddit] 模拟循环完成! 耗时: 852.9秒, 总动作: 6
+[Twitter] 模拟循环完成! 耗时: 918.6秒, 总动作: 6
 
-        try:
-            response = self.llm.chat_json(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.3
-            )
-            
-            if progress_callback:
-                progress_callback("planning", 80, t('progress.parsingOutline'))
-            
-            # 解析大綱
-            sections = []
-            for section_data in response.get("sections", []):
-                sections.append(ReportSection(
-                    title=section_data.get("title", ""),
-                    content=""
-                ))
-            
-            outline = ReportOutline(
-                title=response.get("title", "模擬分析報告"),
-                summary=response.get("summary", ""),
-                sections=sections
-            )
-            
-            if progress_callback:
-                progress_callback("planning", 100, t('progress.outlinePlanComplete'))
-            
-            logger.info(t('report.outlinePlanDone', count=len(sections)))
-            return outline
-            
-        except Exception as e:
-            logger.error(t('report.outlinePlanFailed', error=str(e)))
-            # 返回預設大綱（3個章節，作為fallback）
-            return ReportOutline(
-                title="未來預測報告",
-                summary="基於模擬預測的未來趨勢與風險分析",
-                sections=[
-                    ReportSection(title="預測場景與核心發現"),
-                    ReportSection(title="人群行為預測分析"),
-                    ReportSection(title="趨勢展望與風險提示")
-                ]
-            )
----
-def _generate_section_react(
-        self, 
-        section: ReportSection,
-        outline: ReportOutline,
-        previous_sections: List[str],
-        progress_callback: Optional[Callable] = None,
-        section_index: int = 0
-    ) -> str:
-        """
-        使用ReACT模式生成單個章節內容
-        
-        ReACT迴圈：
-        1. Thought（思考）- 分析需要什麼資訊
-        2. Action（行動）- 呼叫工具獲取資訊
-        3. Observation（觀察）- 分析工具返回結果
-        4. 重複直到資訊足夠或達到最大次數
-        5. Final Answer（最終回答）- 生成章節內容
-        
-        Args:
-            section: 要生成的章節
-            outline: 完整大綱
-            previous_sections: 之前章節的內容（用於保持連貫性）
-            progress_callback: 進度回撥
-            section_index: 章節索引（用於日誌記錄）
-            
-        Returns:
-            章節內容（Markdown格式）
-        """
-        logger.info(t('report.reactGenerateSection', title=section.title))
-        
-        # 記錄章節開始日誌
-        if self.report_logger:
-            self.report_logger.log_section_start(section.title, section_index)
-        
-        system_prompt = SECTION_SYSTEM_PROMPT_TEMPLATE.format(
-            report_title=outline.title,
-            report_summary=outline.summary,
-            simulation_requirement=self.simulation_requirement,
-            section_title=section.title,
-            tools_description=self._get_tools_description(),
-        )
-        system_prompt = f"{system_prompt}\n\n{get_language_instruction()}"
+收到IPC命令: batch_interview, id=d430e305-b04f-486f-92ee-cf56e2ff0974
+2026-07-22 15:43:06,494 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E4164410>
+2026-07-22 15:43:06,494 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+  Twitter批量Interview失败: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:43:06,514 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E4164410>
+2026-07-22 15:43:06,514 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:43:06,517 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E4164410>
+2026-07-22 15:43:06,518 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:43:06,521 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E4164410>
+2026-07-22 15:43:06,521 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:43:53,963 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E4164410>
+2026-07-22 15:43:53,963 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:43:53,969 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E5F3CA50>
+2026-07-22 15:43:53,969 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:43:53,972 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E5F3CA50>
+2026-07-22 15:43:53,972 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+  Reddit批量Interview失败: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:43:53,978 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E5F3CA50>
+2026-07-22 15:43:53,978 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:44:05,437 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E5F3CA50>
+2026-07-22 15:44:05,438 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+2026-07-22 15:44:05,454 - camel.models.model_manager - ERROR - Error processing with model: <camel.models.openai_model.OpenAIModel object at 0x00000228E5F3CA50>
+2026-07-22 15:44:05,455 - camel.camel.agents.chat_agent - ERROR - Model error: qwen/qwen3.5-9b
+Traceback (most recent call last):
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\agents\chat_agent.py", line 2248, in _aget_model_response
+    response = await self.model_backend.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 287, in arun
+    raise exc
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\model_manager.py", line 274, in arun
+    response = await self.current_model.arun(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\base_model.py", line 480, in arun
+    result = await self._arun(messages, response_format, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 388, in _arun
+    result = await self._arequest_chat_completion(messages, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\camel\models\openai_model.py", line 426, in _arequest_chat_completion
+    return await self._async_client.chat.completions.create(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\resources\chat\completions\completions.py", line 2585, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1794, in post
+    return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\user\MiroFish\backend\.venv\Lib\site-packages\openai\_base_client.py", line 1594, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': 'Context size has been exceeded.'}
+[15:55:51] 
+关闭环境...
+[15:55:51] [Twitter] 环境已关闭
+[15:55:51] [Reddit] 环境已关闭
+[15:55:51] ============================================================
+[15:55:51] 全部完成!
+[15:55:51] 日志文件:
+[15:55:51]   - C:\Users\user\MiroFish\backend\app\services\../../uploads/simulations\sim_a3510fe7fac3\simulation.log
+[15:55:51]   - C:\Users\user\MiroFish\backend\app\services\../../uploads/simulations\sim_a3510fe7fac3\twitter\actions.jsonl
+[15:55:51]   - C:\Users\user\MiroFish\backend\app\services\../../uploads/simulations\sim_a3510fe7fac3\reddit\actions.jsonl
+[15:55:51] ============================================================
 
-        # 構建使用者prompt - 每個已完成章節各傳入最大4000字
-        if previous_sections:
-            previous_parts = []
-            for sec in previous_sections:
-                # 每個章節最多4000字
-                truncated = sec[:4000] + "..." if len(sec) > 4000 else sec
-                previous_parts.append(truncated)
-            previous_content = "\n\n---\n\n".join(previous_parts)
-        else:
-            previous_content = "（這是第一個章節）"
-        
-        user_prompt = SECTION_USER_PROMPT_TEMPLATE.format(
-            previous_content=previous_content,
-            section_title=section.title,
-        )
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-        
-        # ReACT迴圈
-        tool_calls_count = 0
-        max_iterations = 5  # 最大迭代輪數
-        min_tool_calls = 3  # 最少工具呼叫次數
-        conflict_retries = 0  # 工具呼叫與Final Answer同時出現的連續衝突次數
-        used_tools = set()  # 記錄已呼叫過的工具名
-        all_tools = {"insight_forge", "panorama_search", "quick_search", "interview_agents"}
-
-        # 報告上下文，用於InsightForge的子問題生成
-        report_context = f"章節標題: {section.title}\n模擬需求: {self.simulation_requirement}"
-        
-        for iteration in range(max_iterations):
-            if progress_callback:
-                progress_callback(
-                    "generating", 
-                    int((iteration / max_iterations) * 100),
-                    t('progress.deepSearchAndWrite', current=tool_calls_count, max=self.MAX_TOOL_CALLS_PER_SECTION)
-                )
-            
-            # 呼叫LLM
-            response = self.llm.chat(
-                messages=messages,
-                temperature=0.5,
-                max_tokens=2048
-            )
-
-            # 檢查 LLM 返回是否為 None（API 異常或內容為空）
-            if response is None:
-                logger.warning(t('report.sectionIterNone', title=section.title, iteration=iteration + 1))
-                # 如果還有迭代次數，新增訊息並重試
-                if iteration < max_iterations - 1:
-                    messages.append({"role": "assistant", "content": "（響應為空）"})
-                    messages.append({"role": "user", "content": "請繼續生成內容。"})
-                    continue
-                # 最後一次迭代也返回 None，跳出迴圈進入強制收尾
-                break
-
-            logger.debug(f"LLM響應: {response[:200]}...")
-
-            # 解析一次，複用結果
-            tool_calls = self._parse_tool_calls(response)
-            has_tool_calls = bool(tool_calls)
-            has_final_answer = "Final Answer:" in response
-
-            # ── 衝突處理：LLM 同時輸出了工具呼叫和 Final Answer ──
-            if has_tool_calls and has_final_answer:
-                conflict_retries += 1
-                logger.warning(
-                    t('report.sectionConflict', title=section.title, iteration=iteration+1, conflictCount=conflict_retries)
-                )
-
-                if conflict_retries <= 2:
-                    # 前兩次：丟棄本次響應，要求 LLM 重新回覆
-                    messages.append({"role": "assistant", "content": response})
-                    messages.append({
-                        "role": "user",
-                        "content": (
-                            "【格式錯誤】你在一次回覆中同時包含了工具呼叫和 Final Answer，這是不允許的。\n"
-                            "每次回覆只能做以下兩件事之一：\n"
-                            "- 呼叫一個工具（輸出一個 <tool_call> 塊，不要寫 Final Answer）\n"
-                            "- 輸出最終內容（以 'Final Answer:' 開頭，不要包含 <tool_call>）\n"
-                            "請重新回覆，只做其中一件事。"
-                        ),
-                    })
-                    continue
-                else:
-                    # 第三次：降級處理，截斷到第一個工具呼叫，強制執行
-                    logger.warning(
-                        t('report.sectionConflictDowngrade', title=section.title, conflictCount=conflict_retries)
-                    )
-                    first_tool_end = response.find('</tool_call>')
-                    if first_tool_end != -1:
-                        response = response[:first_tool_end + len('</tool_call>')]
-                        tool_calls = self._parse_tool_calls(response)
-                        has_tool_calls = bool(tool_calls)
-                    has_final_answer = False
-                    conflict_retries = 0
-
-            # 記錄 LLM 響應日誌
-            if self.report_logger:
-                self.report_logger.log_llm_response(
-                    section_title=section.title,
-                    section_index=section_index,
-                    response=response,
-                    iteration=iteration + 1,
-                    has_tool_calls=has_tool_calls,
-                    has_final_answer=has_final_answer
-                )
-
-            # ── 情況1：LLM 輸出了 Final Answer ──
-            if has_final_answer:
-                # 工具呼叫次數不足，拒絕並要求繼續調工具
-                if tool_calls_count < min_tool_calls:
-                    messages.append({"role": "assistant", "content": response})
-                    unused_tools = all_tools - used_tools
-                    unused_hint = f"（這些工具還未使用，推薦用一下他們: {', '.join(unused_tools)}）" if unused_tools else ""
-                    messages.append({
-                        "role": "user",
-                        "content": REACT_INSUFFICIENT_TOOLS_MSG.format(
-                            tool_calls_count=tool_calls_count,
-                            min_tool_calls=min_tool_calls,
-                            unused_hint=unused_hint,
-                        ),
-                    })
-                    continue
-
-                # 正常結束
-                final_answer = response.split("Final Answer:")[-1].strip()
-                logger.info(t('report.sectionGenDone', title=section.title, count=tool_calls_count))
-
-                if self.report_logger:
-                    self.report_logger.log_section_content(
-                        section_title=section.title,
-                        section_index=section_index,
-                        content=final_answer,
-                        tool_calls_count=tool_calls_count
-                    )
-                return final_answer
-
-            # ── 情況2：LLM 嘗試呼叫工具 ──
-            if has_tool_calls:
-                # 工具額度已耗盡 → 明確告知，要求輸出 Final Answer
-                if tool_calls_count >= self.MAX_TOOL_CALLS_PER_SECTION:
-                    messages.append({"role": "assistant", "content": response})
-                    messages.append({
-                        "role": "user",
-                        "content": REACT_TOOL_LIMIT_MSG.format(
-                            tool_calls_count=tool_calls_count,
-                            max_tool_calls=self.MAX_TOOL_CALLS_PER_SECTION,
-                        ),
-                    })
-                    continue
-
-                # 只執行第一個工具呼叫
-                call = tool_calls[0]
-                if len(tool_calls) > 1:
-                    logger.info(t('report.multiToolOnlyFirst', total=len(tool_calls), toolName=call['name']))
-
-                if self.report_logger:
-                    self.report_logger.log_tool_call(
-                        section_title=section.title,
-                        section_index=section_index,
-                        tool_name=call["name"],
-                        parameters=call.get("parameters", {}),
-                        iteration=iteration + 1
-                    )
-
-                result = self._execute_tool(
-                    call["name"],
-                    call.get("parameters", {}),
-                    report_context=report_context
-                )
-
-                if self.report_logger:
-                    self.report_logger.log_tool_result(
-                        section_title=section.title,
-                        section_index=section_index,
-                        tool_name=call["name"],
-                        result=result,
-                        iteration=iteration + 1
-                    )
-
-                # 限制 Observation 長度以防止 LLM 上下文長度超限
-                max_obs_length = 6000
-                display_result = result
-                if len(result) > max_obs_length:
-                    display_result = result[:max_obs_length] + f"\n\n... (內容過長，已截斷，僅顯示前 {max_obs_length} 字元) ..."
-
-                tool_calls_count += 1
-                used_tools.add(call['name'])
-
-                # 構建未使用工具提示
-                unused_tools = all_tools - used_tools
-                unused_hint = ""
-                if unused_tools and tool_calls_count < self.MAX_TOOL_CALLS_PER_SECTION:
-                    unused_hint = REACT_UNUSED_TOOLS_HINT.format(unused_list="、".join(unused_tools))
-
-                messages.append({"role": "assistant", "content": response})
-                messages.append({
-                    "role": "user",
-                    "content": REACT_OBSERVATION_TEMPLATE.format(
-                        tool_name=call["name"],
-                        result=display_result,
-                        tool_calls_count=tool_calls_count,
-                        max_tool_calls=self.MAX_TOOL_CALLS_PER_SECTION,
-                        used_tools_str=", ".join(used_tools),
-                        unused_hint=unused_hint,
-                    ),
-                })
-                continue
-
-            # ── 情況3：既沒有工具呼叫，也沒有 Final Answer ──
-            messages.append({"role": "assistant", "content": response})
-
-            if tool_calls_count < min_tool_calls:
-                # 工具呼叫次數不足，推薦未用過的工具
-                unused_tools = all_tools - used_tools
-                unused_hint = f"（這些工具還未使用，推薦用一下他們: {', '.join(unused_tools)}）" if unused_tools else ""
-
-                messages.append({
-                    "role": "user",
-                    "content": REACT_INSUFFICIENT_TOOLS_MSG_ALT.format(
-                        tool_calls_count=tool_calls_count,
-                        min_tool_calls=min_tool_calls,
-                        unused_hint=unused_hint,
-                    ),
-                })
-                continue
-
-            # 工具呼叫已足夠，LLM 輸出了內容但沒帶 "Final Answer:" 字首
-            # 直接將這段內容作為最終答案，不再空轉
-            logger.info(t('report.sectionNoPrefix', title=section.title, count=tool_calls_count))
-            final_answer = response.strip()
-
-            if self.report_logger:
-                self.report_logger.log_section_content(
-                    section_title=section.title,
-                    section_index=section_index,
-                    content=final_answer,
-                    tool_calls_count=tool_calls_count
-                )
-            return final_answer
-        
-        # 達到最大迭代次數，強制生成內容
-        logger.warning(t('report.sectionMaxIter', title=section.title))
-        messages.append({"role": "user", "content": REACT_FORCE_FINAL_MSG})
-        
-        response = self.llm.chat(
-            messages=messages,
-            temperature=0.5,
-            max_tokens=2048
-        )
-
-        # 檢查強制收尾時 LLM 返回是否為 None
-        if response is None:
-            logger.error(t('report.sectionForceFailed', title=section.title))
-            final_answer = t('report.sectionGenFailedContent')
-        elif "Final Answer:" in response:
-            final_answer = response.split("Final Answer:")[-1].strip()
-        else:
-            final_answer = response
-        
-        # 記錄章節內容生成完成日誌
-        if self.report_logger:
-            self.report_logger.log_section_content(
-                section_title=section.title,
-                section_index=section_index,
-                content=final_answer,
-                tool_calls_count=tool_calls_count
-            )
-        
-        return final_answer
----
-def generate_report(
-        self, 
-        progress_callback: Optional[Callable[[str, int, str], None]] = None,
-        report_id: Optional[str] = None
-    ) -> Report:
-        """
-        生成完整報告（分章節實時輸出）
-        
-        每個章節生成完成後立即儲存到資料夾，不需要等待整個報告完成。
-        檔案結構：
-        reports/{report_id}/
-            meta.json       - 報告元資訊
-            outline.json    - 報告大綱
-            progress.json   - 生成進度
-            section_01.md   - 第1章節
-            section_02.md   - 第2章節
-            ...
-            full_report.md  - 完整報告
-        
-        Args:
-            progress_callback: 進度回撥函式 (stage, progress, message)
-            report_id: 報告ID（可選，如果不傳則自動生成）
-            
-        Returns:
-            Report: 完整報告
-        """
-        import uuid
-        
-        # 如果沒有傳入 report_id，則自動生成
-        if not report_id:
-            report_id = f"report_{uuid.uuid4().hex[:12]}"
-        start_time = datetime.now()
-        
-        report = Report(
-            report_id=report_id,
-            simulation_id=self.simulation_id,
-            graph_id=self.graph_id,
-            simulation_requirement=self.simulation_requirement,
-            status=ReportStatus.PENDING,
-            created_at=datetime.now().isoformat()
-        )
-        
-        # 已完成的章節標題列表（用於進度追蹤）
-        completed_section_titles = []
-        
-        try:
-            # 初始化：建立報告資料夾並儲存初始狀態
-            ReportManager._ensure_report_folder(report_id)
-            
-            # 初始化日誌記錄器（結構化日誌 agent_log.jsonl）
-            self.report_logger = ReportLogger(report_id)
-            self.report_logger.log_start(
-                simulation_id=self.simulation_id,
-                graph_id=self.graph_id,
-                simulation_requirement=self.simulation_requirement
-            )
-            
-            # 初始化控制檯日誌記錄器（console_log.txt）
-            self.console_logger = ReportConsoleLogger(report_id)
-            
-            ReportManager.update_progress(
-                report_id, "pending", 0, t('progress.initReport'),
-                completed_sections=[]
-            )
-            ReportManager.save_report(report)
-            
-            # 階段1: 規劃大綱
-            report.status = ReportStatus.PLANNING
-            ReportManager.update_progress(
-                report_id, "planning", 5, t('progress.startPlanningOutline'),
-                completed_sections=[]
-            )
-            
-            # 記錄規劃開始日誌
-            self.report_logger.log_planning_start()
-            
-            if progress_callback:
-                progress_callback("planning", 0, t('progress.startPlanningOutline'))
-            
-            outline = self.plan_outline(
-                progress_callback=lambda stage, prog, msg: 
-                    progress_callback(stage, prog // 5, msg) if progress_callback else None
-            )
-            report.outline = outline
-            
-            # 記錄規劃完成日誌
-            self.report_logger.log_planning_complete(outline.to_dict())
-            
-            # 儲存大綱到檔案
-            ReportManager.save_outline(report_id, outline)
-            ReportManager.update_progress(
-                report_id, "planning", 15, t('progress.outlineDone', count=len(outline.sections)),
-                completed_sections=[]
-            )
-            ReportManager.save_report(report)
-            
-            logger.info(t('report.outlineSavedToFile', reportId=report_id))
-            
-            # 階段2: 逐章節生成（分章節儲存）
-            report.status = ReportStatus.GENERATING
-            
-            total_sections = len(outline.sections)
-            generated_sections = []  # 儲存內容用於上下文
-            
-            for i, section in enumerate(outline.sections):
-                section_num = i + 1
-                base_progress = 20 + int((i / total_sections) * 70)
-                
-                # 更新進度
-                ReportManager.update_progress(
-                    report_id, "generating", base_progress,
-                    t('progress.generatingSection', title=section.title, current=section_num, total=total_sections),
-                    current_section=section.title,
-                    completed_sections=completed_section_titles
-                )
-
-                if progress_callback:
-                    progress_callback(
-                        "generating",
-                        base_progress,
-                        t('progress.generatingSection', title=section.title, current=section_num, total=total_sections)
-                    )
-                
-                # 生成主章節內容
-                section_content = self._generate_section_react(
-                    section=section,
-                    outline=outline,
-                    previous_sections=generated_sections,
-                    progress_callback=lambda stage, prog, msg:
-                        progress_callback(
-                            stage, 
-                            base_progress + int(prog * 0.7 / total_sections),
-                            msg
-                        ) if progress_callback else None,
-                    section_index=section_num
-                )
-                
-                section.content = section_content
-                generated_sections.append(f"## {section.title}\n\n{section_content}")
-
-                # 儲存章節
-                ReportManager.save_section(report_id, section_num, section)
-                completed_section_titles.append(section.title)
-
-                # 記錄章節完成日誌
-                full_section_content = f"## {section.title}\n\n{section_content}"
-
-                if self.report_logger:
-                    self.report_logger.log_section_full_complete(
-                        section_title=section.title,
-                        section_index=section_num,
-                        full_content=full_section_content.strip()
-                    )
-
-                logger.info(t('report.sectionSaved', reportId=report_id, sectionNum=f"{section_num:02d}"))
-                
-                # 更新進度
-                ReportManager.update_progress(
-                    report_id, "generating", 
-                    base_progress + int(70 / total_sections),
-                    t('progress.sectionDone', title=section.title),
-                    current_section=None,
-                    completed_sections=completed_section_titles
-                )
-            
-            # 階段3: 組裝完整報告
-            if progress_callback:
-                progress_callback("generating", 95, t('progress.assemblingReport'))
-            
-            ReportManager.update_progress(
-                report_id, "generating", 95, t('progress.assemblingReport'),
-                completed_sections=completed_section_titles
-            )
-            
-            # 使用ReportManager組裝完整報告
-            report.markdown_content = ReportManager.assemble_full_report(report_id, outline)
-            report.status = ReportStatus.COMPLETED
-            report.completed_at = datetime.now().isoformat()
-            
-            # 計算總耗時
-            total_time_seconds = (datetime.now() - start_time).total_seconds()
-            
-            # 記錄報告完成日誌
-            if self.report_logger:
-                self.report_logger.log_report_complete(
-                    total_sections=total_sections,
-                    total_time_seconds=total_time_seconds
-                )
-            
-            # 儲存最終報告
-            ReportManager.save_report(report)
-            ReportManager.update_progress(
-                report_id, "completed", 100, t('progress.reportComplete'),
-                completed_sections=completed_section_titles
-            )
-            
-            if progress_callback:
-                progress_callback("completed", 100, t('progress.reportComplete'))
-            
-            logger.info(t('report.reportGenDone', reportId=report_id))
-            
-            # 關閉控制檯日誌記錄器
-            if self.console_logger:
-                self.console_logger.close()
-                self.console_logger = None
-            
-            return report
-            
-        except Exception as e:
-            logger.error(t('report.reportGenFailed', error=str(e)))
-            report.status = ReportStatus.FAILED
-            report.error = str(e)
-            
-            # 記錄錯誤日誌
-            if self.report_logger:
-                self.report_logger.log_error(str(e), "failed")
-            
-            # 儲存失敗狀態
-            try:
-                ReportManager.save_report(report)
-                ReportManager.update_progress(
-                    report_id, "failed", -1, t('progress.reportFailed', error=str(e)),
-                    completed_sections=completed_section_titles
-                )
-            except Exception:
-                pass  # 忽略儲存失敗的錯誤
-            
-            # 關閉控制檯日誌記錄器
-            if self.console_logger:
-                self.console_logger.close()
-                self.console_logger = None
-            
-            return report
----
+收到IPC命令: close_env, id=17c7b59a-3ca4-40d1-a867-47472bc56366
+收到关闭环境命令
+模拟进程已退出
