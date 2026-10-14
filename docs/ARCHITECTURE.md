@@ -10,7 +10,7 @@ graph TB
     subgraph Input_Sources["【機制核心之三維輸入源 (Mechanism Inputs)】"]
         direction TB
         Unified_Script["1. 單一劇本檔案 (Markdown)<br/>- 關主手冊 (機制指南 + 劇本自帶題庫)<br/>- 關主核心真相 (全局真相/僅 GM 可讀)<br/>- 角色客觀劇本庫 (公開區 vs 私密專區)"]
-        Board_Lib["2. 後端通用看板能力庫 (Board Capabilities Library)<br/>- 對話板、手牌板、任務活動板、私聊室、暗投沙盒之能力定義"]
+        Board_Lib["2. 後端通用看板能力庫 (Board Capabilities Library)<br/>- 對話板、手牌板、任務活動板、彈性私聊/陣營道具沙盒、關主私密投票之能力定義"]
         GM_Meta_Prompt["3. 關主職責元規範 (GM Meta-Prompt Guidelines)<br/>- 主持人準則、裁判職責與 ManualAction 工具集"]
     end
 
@@ -42,8 +42,8 @@ graph TB
             Public_Stream["公共時間序對話看板 (Public Stream)"]
             Public_Card_Board["公共手牌/道具看板 (Public Card Board)"]
             Task_Board["任務活動與分數看板 (Task & Score Board)"]
-            Whisper_Box["雙人微型私聊看板 (Whisper Sandbox)"]
-            Secret_Ballot_Box["無記名暗投沙盒 (Secret Ballot Box)"]
+            Whisper_Box["彈性私聊與陣營道具沙盒 (Whisper & Faction Sandbox)<br/>- 支援雙人/多人陣營密會，具備聊天與私密道具發動能力"]
+            Secret_Ballot_Box["關主私密投票與公示機制 (Private Ballot to GM)<br/>- 向 GM 點對點提交，GM 統計後以 CREATE_POST 公布"]
         end
     end
 
@@ -107,7 +107,7 @@ flowchart TD
 
     Phase1_InitBoards --> Phase2_TurnLoop
 
-    subgraph Phase2_TurnLoop["【階段二：機制嚴格約束下的輪次與博弈循環 (私聊與暗投穿插公聊)】"]
+    subgraph Phase2_TurnLoop["【階段二：機制嚴格約束下的輪次與博弈循環 (彈性私聊與私密投票穿插公聊)】"]
         direction TB
         CheckPerm{"機制發言權威審查：<br/>依本局規則與狀態機<br/>判定是否具備發言權?"}
         SkipSleep["【禁言休眠模式 (A方案)】<br/>• 機制裁決無發言權 (失能)<br/>• 跳過發言 / 0 Token / 背景接收事實"]
@@ -115,8 +115,7 @@ flowchart TD
         WriteNotes["撰寫/刷新第一人稱心智筆記"]
         DeliberateAction["輸出決策：thought + speech + action"]
         GuardCheck{"機制核心合法性審查 (Guardrail)"}
-        RollbackAction["違規動作強制攔截並 Rollback"]
-        InterleavedDispatch["動作分發與穿插公聊執行：<br/>• 常規公聊發言 (推進大廳主軸)<br/>• 穿插雙人私聊 (隔音2~3輪後返回大廳)<br/>• 穿插出牌/答題 (手牌板與任務板)<br/>• 穿插節點投票 (特定輪次暗投表決)"]
+        InterleavedDispatch["動作分發與穿插公聊執行 (全發文驅動)：<br/>• 常規公聊發言 (推進大廳主軸)<br/>• 穿插彈性私聊/陣營密會 (同聊天室窗發文商議，純發文宣告發動道具/技能)<br/>• 穿插出牌/答題 (發文出牌同步公共手牌板，發文提交任務板)<br/>• 穿插向關主私密發文投票 (點對點私密發文投給 GM，GM 統整公聊發布)"]
 
         CheckPerm --"無發言權 (失能禁言)"--> SkipSleep
         CheckPerm --"具發言權 (正常)"--> MultiPerception
