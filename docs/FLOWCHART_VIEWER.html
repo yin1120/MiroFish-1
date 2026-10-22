@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>通用多智能體社交博弈模擬系統 - 架構與機制流程圖檢視器</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --border-color: #334155;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Microsoft JhengHei", sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 24px;
+      line-height: 1.6;
+    }
+    header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    h1 {
+      font-size: 24px;
+      color: var(--accent);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      font-size: 13px;
+      background: #0284c7;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    button:hover {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+    }
+    button.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+    }
+    .tab-content {
+      display: none;
+      background: #090d16;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      overflow-x: auto;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .diagram-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #7dd3fc;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .diagram-desc {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .legend-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .legend-card h3 {
+      font-size: 15px;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .legend-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>通用多智能體社交博弈模擬系統 <span class="badge">架構流程清晰檢視器</span></h1>
+      <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">純通用桌遊規格・超清晰大字體・分階段檢視</p>
+    </div>
+    <div class="controls">
+      <button onclick="switchTab('full')" id="btn-full" class="active">🌐 全景完整總圖</button>
+      <button onclick="switchTab('part1')" id="btn-part1">1️⃣ 階段一：開板與關主信任</button>
+      <button onclick="switchTab('part2')" id="btn-part2">2️⃣ 階段二：思考依據與行動</button>
+      <button onclick="switchTab('part3')" id="btn-part3">3️⃣ 階段三：機制審查與狀態掃描</button>
+    </div>
+  </header>
+
+  <!-- 全景完整總圖 -->
+  <div id="tab-full" class="tab-content active">
+    <div class="diagram-title">🌐 系統端到端全景運作總圖 (7 大步驟完整串聯)</div>
+    <div class="diagram-desc">展示從劇本載入、開板判定、關主開場、玩家思考感知、動作審查、狀態掃描到終局復盤的完整閉環。</div>
+    <div class="mermaid">
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'background': '#090d16',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#ffffff',
+    'primaryBorderColor': '#38bdf8',
+    'lineColor': '#38bdf8',
+    'fontSize': '18px',
+    'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", sans-serif'
+  }
+}}%%
+flowchart TD
+    ScriptInput([載入單一劇本 script.md]) --> ScriptExtract[劇本結構化提取]
+
+    subgraph ScriptSource["【劇本三大標題來源】"]
+        direction TB
+        GM_Script["【關主劇本】<br/>• 規模<br/>• 故事<br/>• 規則<br/>• 流程<br/>• 獲勝機制<br/>• 題庫"]
+        Char_Public["【公開角色劇本】<br/>• 人設與人物介紹<br/>• 故事線<br/>• 公開道具與公開任務"]
+        Char_Secret["【秘密角色劇本】<br/>• 秘密任務<br/>• 私密道具與技能<br/>• 作案行蹤與秘密<br/>• 對其他人的私下看法"]
+    end
+
+    ScriptExtract --> GM_Script
+    ScriptExtract --> Char_Public
+    ScriptExtract --> Char_Secret
+
+    GM_Script -->|"依據【規模】"| Step_CheckCount{"【步驟 1：人數名額核對】<br/>劇本記載人數 與 參賽名冊 是否相符?"}
+    Step_CheckCount --"人數不符"--> AbortSession([報錯中止對局])
+    Step_CheckCount --"人數相符"--> BoardDeductionEngine["【步驟 2：直接依【看板對照表】判定開板】"]
+
+    GM_Script & Char_Secret --> BoardDeductionEngine
+
+    subgraph OpenBoards["【開放之 5 大通用看板】"]
+        direction TB
+        Board_Public["1.【全場公開大廳】"]
+        Board_Item["2.【個人道具視窗】"]
+        Board_Card["3.【公共道具板】"]
+        Board_Task["4.【任務分數看板】"]
+        Board_Whisper["5.【多人私聊房間】"]
+    end
+
+    BoardDeductionEngine -->|"依據【故事】與【流程】 ➔ 全局主時序"| Board_Public
+    BoardDeductionEngine -->|"依據【私密道具與技能】 ➔ 判定角色持有私密道具"| Board_Item
+    BoardDeductionEngine -->|"依據【故事】與【規則】 ➔ 判定有公開道具或檯面操作"| Board_Card
+    BoardDeductionEngine -->|"依據【題庫】與【獲勝機制】 ➔ 判定有題目與計分門檻"| Board_Task
+    BoardDeductionEngine -->|"依據【流程】與【規則】 ➔ 判定規則允許私聊密會"| Board_Whisper
+
+    OpenBoards --> GMOpener["【步驟 3：關主初始固定發言與信任確立】<br/>1. 宣告超然客觀公證人身分 (真理戳記)<br/>2. 宣讀故事世界觀<br/>3. 說明遊戲流程階段<br/>4. 說明行動規則與發言順序<br/>5. 宣告勝負目標與終止條件<br/>6. 各板點對點指引與道具發放"]
+
+    GMOpener --> PlayerActionLoop["【步驟 4：輪到玩家行動輪次】"]
+
+    PlayerActionLoop --> ThinkReferences
+
+    subgraph ThinkReferences["【玩家行動前之多維思考參考依據】"]
+        direction TB
+        Ref_Subjective["1.【個人主觀看板 (心智筆記)】<br/>• 對其他玩家主觀懷疑度與信用評級<br/>• 私密推理假設與隱密策略<br/>• 個人偽裝設定與自保話術規劃"]
+        Ref_PrivateBoard["2.【個人看板歷史紀錄】<br/>• 個人道具視窗歷史 (持用狀態/共有名單)<br/>• 專屬私聊房間歷史 (隔音商討/同盟承諾)<br/>• 秘密角色劇本 (秘密行蹤/私有目標)"]
+        Ref_PublicBoard["3.【公共看板歷史紀錄】<br/>• 全場公開大廳歷史 (全體公開辯論紀錄)<br/>• 公共道具板歷史 (檯面公開操作紀錄)<br/>• 任務分數看板現況 (題目進度與分數)"]
+        Ref_TruthKG["4.【客觀真理與知識圖譜】<br/>• 關主官方真理公告 (規則/時序/死訊)<br/>• 客觀圖譜 (公開人設背景/世界物理底色)"]
+    end
+
+    ThinkReferences --> PlayerThinking["【玩家第一人稱深度思考】<br/>• 交叉比對客觀事實與他人言論矛盾<br/>• 結合自身秘密與目標，擬定本輪策略<br/>• 產出內部決策思考 (thought) 並決定行動"]
+
+    PlayerThinking --> Action_Public["動作 A: 於【公開大廳】公開陳述發言或過牌"]
+    PlayerThinking --> Action_Item["動作 B: 於【道具視窗】發文宣告使用隨身道具"]
+    PlayerThinking --> Action_Card["動作 C: 於【公共道具板】公開操作或展示道具"]
+    PlayerThinking --> Action_Task["動作 D: 於【任務看板】發文提交挑戰題目解答"]
+    PlayerThinking --> Action_Whisper["動作 E: 於【私聊房間】進行多人隔音商討協商"]
+
+    Action_Public -->|"連線匯入機制"| MechanismJudge
+    Action_Item -->|"連線匯入機制"| MechanismJudge
+    Action_Card -->|"連線匯入機制"| MechanismJudge
+    Action_Task -->|"連線匯入機制"| MechanismJudge
+    Action_Whisper -->|"連線匯入機制"| MechanismJudge
+
+    subgraph MechanismJudge["【步驟 5：最高機制核心 (依看板分類專屬條列審查)】"]
+        direction TB
+        Judge_A["【全場公開大廳專屬審查】<br/>• 發言權限審查：審查發言者是否失能淘汰 (失能禁言休眠，0 Token)<br/>• 發言排程審查：是否符合發言順序或合法過牌 (PASS)<br/>• 言論邊界審查：僅限公開陳述，嚴禁越權執行私密操作"]
+        Judge_B["【個人道具視窗專屬審查】<br/>• 持有權限審查：發起者是否名列持有人名單<br/>• 共有約束審查：共有道具本輪是否已被同伴使用 (限一人代表發動)<br/>• 消耗狀態審查：是否為消耗品、是否處於冷卻或耗盡狀態"]
+        Judge_C["【公共道具板專屬審查】<br/>• 操作時序審查：當前階段是否開放公開操作、時序是否輪到該玩家<br/>• 規則合規審查：操作動作是否符合劇本規定之公開操作規則<br/>• 狀態流轉審查：私密道具公開化，更新為全場共享檯面狀態"]
+        Judge_D["【任務分數看板專屬審查】<br/>• 作答資格審查：該任務挑戰是否開放、是否重複提交<br/>• 答案客觀審查：提交解答是否與劇本標準答案吻合<br/>• 數值核算審查：自動核算給分並實時累計至總進度條"]
+        Judge_E["【多人私聊房間專屬審查】<br/>• 功能邊界審查：嚴禁在私聊房內直接使用道具 (違規阻斷)<br/>• 成員身分審查：發言者是否為該房間之合法受邀成員<br/>• 共識與時限審查：若規則需要共識但無共識、或達上限 ➔ 強制進入投票環節"]
+    end
+
+    MechanismJudge --"動作違規"--> RejectAction["【機制阻斷駁回】動作無效，退回重新思考與決策"] -.-> PlayerActionLoop
+
+    MechanismJudge --"動作合規"--> ParallelCheck{"【步驟 6：全域機制通用狀態掃描中樞 (無差別並行掃描)】<br/>1. 通用勝負終止掃描：比對劇本勝負與終結判定邏輯 (不預設具體公式)<br/>2. 投票觸發節點掃描：檢查當前時序是否抵達預設之投票表決或指認節點<br/>3. 真相線索解鎖掃描：比對發言進展或動作是否滿足解鎖條件 (獨佔性鎖定)<br/>4. 發言權限更新掃描：檢查玩家狀態變更 (淘汰失能者即刻標記禁言休眠)<br/>5. 流程階段切換掃描：檢查各項進程條件，判定是否推進至下一流程階段"}
+
+    ParallelCheck --"未達成勝負 (推進遊戲)"--> ActionApproved["【機制核准】動作正式生效，寫入公開或私密紀錄"]
+
+    ActionApproved --> GMNarrate["【關主隨行解說與突發通報】<br/>• 獲得/發動道具即時解說<br/>• 人員失能淘汰於大廳敲鐘通報並啟動禁言休眠<br/>• 私聊無共識/超時主持房內投票，引導代表回道具視窗發動<br/>• 觸發隱藏線索多層級分發 (個人/小組/全場)<br/>• 階段切換敲鐘廣播<br/>• 到達投票節點啟動私密投票詢問與大廳計票公示"]
+
+    GMNarrate --> NextTurn["輪次 + 1，調度下一位玩家"] --> PlayerActionLoop
+
+    ParallelCheck --"達成勝負條件 (觸發終局)"--> BreakLoop["【機制立即中斷輪次循環】<br/>終止後續發言，進入終局復盤"]
+
+    BreakLoop --> GMEarlyWin["【關主發布提前獲勝插播廣播】<br/>於全場大廳插播宣告勝利陣營/玩家"]
+
+    GMEarlyWin --> FinalReview["【步驟 7：終局真相宣讀與復盤評分】<br/>1. 機制統計投票表決與個人秘密目標達成狀況<br/>2. 關主對照核心真相庫宣讀真實真相與因果<br/>3. 產出完整復盤報告與玩家推理評分榜"] --> End([推演完成])
+    </div>
+  </div>
+
+  <!-- 分段圖一 -->
+  <div id="tab-part1" class="tab-content">
+    <div class="diagram-title">1️⃣ 階段一：劇本攝入、看板判定與關主信任確立 (步驟 1 ~ 3)</div>
+    <div class="diagram-desc">展示劇本三大純標題提取、依規模核對人數、直接依看板對照表掛載 5 大通用看板、以及關主確立絕對信任之開場指引。</div>
+    <div class="mermaid">
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'background': '#090d16',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#ffffff',
+    'primaryBorderColor': '#38bdf8',
+    'lineColor': '#38bdf8',
+    'fontSize': '22px',
+    'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", sans-serif'
+  }
+}}%%
+flowchart TD
+    ScriptInput([載入單一劇本 script.md]) --> ScriptExtract[劇本結構化提取]
+
+    subgraph ScriptSource["【劇本三大標題來源】"]
+        direction TB
+        GM_Script["【關主劇本】<br/>• 規模<br/>• 故事<br/>• 規則<br/>• 流程<br/>• 獲勝機制<br/>• 題庫"]
+        Char_Public["【公開角色劇本】<br/>• 人設與人物介紹<br/>• 故事線<br/>• 公開道具與公開任務"]
+        Char_Secret["【秘密角色劇本】<br/>• 秘密任務<br/>• 私密道具與技能<br/>• 作案行蹤與秘密<br/>• 對其他人的私下看法"]
+    end
+
+    ScriptExtract --> GM_Script
+    ScriptExtract --> Char_Public
+    ScriptExtract --> Char_Secret
+
+    GM_Script -->|"依據【規模】"| Step_CheckCount{"【步驟 1：人數名額核對】<br/>劇本記載人數 與 參賽名冊 是否相符?"}
+    Step_CheckCount --"人數不符"--> AbortSession([報錯中止對局])
+    Step_CheckCount --"人數相符"--> BoardDeductionEngine["【步驟 2：直接依【看板對照表】判定開板】"]
+
+    GM_Script & Char_Secret --> BoardDeductionEngine
+
+    subgraph OpenBoards["【開放之 5 大通用看板】"]
+        direction TB
+        Board_Public["1.【全場公開大廳】"]
+        Board_Item["2.【個人道具視窗】"]
+        Board_Card["3.【公共道具板】"]
+        Board_Task["4.【任務分數看板】"]
+        Board_Whisper["5.【多人私聊房間】"]
+    end
+
+    BoardDeductionEngine -->|"依據【故事】與【流程】 ➔ 全局主時序"| Board_Public
+    BoardDeductionEngine -->|"依據【私密道具與技能】 ➔ 判定角色持有私密道具"| Board_Item
+    BoardDeductionEngine -->|"依據【故事】與【規則】 ➔ 判定有公開道具或檯面操作"| Board_Card
+    BoardDeductionEngine -->|"依據【題庫】與【獲勝機制】 ➔ 判定有題目與計分門檻"| Board_Task
+    BoardDeductionEngine -->|"依據【流程】與【規則】 ➔ 判定規則允許私聊密會"| Board_Whisper
+
+    OpenBoards --> GMOpener["【步驟 3：關主初始固定發言與信任確立】<br/>1. 確立關主絕對信任：宣告超然客觀公證人身分 (蓋真理戳記)<br/>2. 宣讀故事世界觀：時代環境、空間設定與開場劇情<br/>3. 說明遊戲流程階段：時序輪替、幕次推進、公開與私聊時段<br/>4. 說明行動規則：發言順序、過牌規範、檯面操作、私聊禁直接用道具<br/>5. 宣告勝負目標與終止條件：陣營或個人獲勝門檻與終止判定<br/>6. 各板點對點指引：道具視窗發放道具宣告共有者、公共道具板陳列公開道具、任務看板發布題目"]
+
+    GMOpener --> NextStep([進入步驟 4：輪到玩家行動輪次])
+    </div>
+  </div>
+
+  <!-- 分段圖二 -->
+  <div id="tab-part2" class="tab-content">
+    <div class="diagram-title">2️⃣ 階段二：玩家思考參考依據與輪次決策行動 (步驟 4)</div>
+    <div class="diagram-desc">展示玩家行動前調閱之「個人主觀看板」、「個人看板歷史」、「公共看板歷史」與「客觀真理與圖譜」，進行深度思考後輸出五大動作。</div>
+    <div class="mermaid">
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'background': '#090d16',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#ffffff',
+    'primaryBorderColor': '#38bdf8',
+    'lineColor': '#38bdf8',
+    'fontSize': '22px',
+    'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", sans-serif'
+  }
+}}%%
+flowchart TD
+    PlayerActionLoop["【步驟 4：輪到玩家行動輪次】"] --> ThinkReferences
+
+    subgraph ThinkReferences["【玩家行動前之多維思考參考依據】"]
+        direction TB
+        Ref_Subjective["1.【個人主觀看板 (心智筆記)】<br/>• 對其他玩家主觀懷疑度與信用評級<br/>• 私密推理假設與隱密策略<br/>• 個人偽裝設定與自保話術規劃"]
+        Ref_PrivateBoard["2.【個人看板歷史紀錄】<br/>• 個人道具視窗歷史 (持用狀態/共有名單)<br/>• 專屬私聊房間歷史 (隔音商討/同盟承諾)<br/>• 秘密角色劇本 (秘密行蹤/私有目標)"]
+        Ref_PublicBoard["3.【公共看板歷史紀錄】<br/>• 全場公開大廳歷史 (全體公開辯論紀錄)<br/>• 公共道具板歷史 (檯面公開操作紀錄)<br/>• 任務分數看板現況 (題目進度與分數)"]
+        Ref_TruthKG["4.【客觀真理與知識圖譜】<br/>• 關主官方真理公告 (規則/時序/死訊)<br/>• 客觀圖譜 (公開人設背景/世界物理底色)"]
+    end
+
+    ThinkReferences --> PlayerThinking["【玩家第一人稱深度思考】<br/>• 交叉比對客觀事實與他人言論矛盾 (防詐欺/測謊)<br/>• 結合自身秘密與目標，擬定本輪博弈策略<br/>• 產出內部決策思考 (thought) 並決定行動"]
+
+    PlayerThinking --> Action_Public["動作 A: 於【公開大廳】公開陳述發言或過牌"]
+    PlayerThinking --> Action_Item["動作 B: 於【道具視窗】發文宣告使用隨身道具"]
+    PlayerThinking --> Action_Card["動作 C: 於【公共道具板】公開操作或展示道具"]
+    PlayerThinking --> Action_Task["動作 D: 於【任務看板】發文提交挑戰題目解答"]
+    PlayerThinking --> Action_Whisper["動作 E: 於【私聊房間】進行多人隔音商討協商"]
+
+    Action_Public & Action_Item & Action_Card & Action_Task & Action_Whisper --> NextStep([連線匯入步驟 5 機制專屬審查])
+    </div>
+  </div>
+
+  <!-- 分段圖三 -->
+  <div id="tab-part3" class="tab-content">
+    <div class="diagram-title">3️⃣ 階段三：中心機制審查、全域狀態掃描與終局流轉 (步驟 5 ~ 7)</div>
+    <div class="diagram-desc">展示 5 大看板專屬條列審查（私聊無共識微投票）、全域 5 大狀態無差別並行掃描、關主通報以及提前獲勝與終局復盤。</div>
+    <div class="mermaid">
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'background': '#090d16',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#ffffff',
+    'primaryBorderColor': '#38bdf8',
+    'lineColor': '#38bdf8',
+    'fontSize': '20px',
+    'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", sans-serif'
+  }
+}}%%
+flowchart TD
+    ActionsInput([接收玩家看板動作 A ~ E]) --> MechanismJudge
+
+    subgraph MechanismJudge["【步驟 5：最高機制核心 (依看板分類專屬條列審查)】"]
+        direction TB
+        Judge_A["【全場公開大廳專屬審查】<br/>• 發言權限審查：審查發言者是否失能淘汰 (失能禁言休眠，0 Token)<br/>• 發言排程審查：是否符合發言順序或合法過牌 (PASS)<br/>• 言論邊界審查：僅限公開陳述，嚴禁越權執行私密操作"]
+        Judge_B["【個人道具視窗專屬審查】<br/>• 持有權限審查：發起者是否名列持有人名單<br/>• 共有約束審查：共有道具本輪是否已被同伴使用 (限一人代表發動)<br/>• 消耗狀態審查：是否為消耗品、是否處於冷卻或耗盡狀態"]
+        Judge_C["【公共道具板專屬審查】<br/>• 操作時序審查：當前階段是否開放公開操作、時序是否輪到該玩家<br/>• 規則合規審查：操作動作是否符合劇本規定之公開操作規則<br/>• 狀態流轉審查：私密道具公開化，更新為全場共享檯面狀態"]
+        Judge_D["【任務分數看板專屬審查】<br/>• 作答資格審查：該任務挑戰是否開放、是否重複提交<br/>• 答案客觀審查：提交解答是否與劇本標準答案吻合<br/>• 數值核算審查：自動核算給分並實時累計至總進度條"]
+        Judge_E["【多人私聊房間專屬審查】<br/>• 功能邊界審查：嚴禁在私聊房內直接使用道具 (違規阻斷)<br/>• 成員身分審查：發言者是否為該房間之合法受邀成員<br/>• 共識與時限審查：若規則需要共識但無共識、或達上限 ➔ 強制進入投票環節"]
+    end
+
+    MechanismJudge --"動作違規"--> RejectAction["【機制阻斷駁回】動作無效，退回重新決策"]
+
+    MechanismJudge --"動作合規"--> ParallelCheck{"【步驟 6：全域機制通用狀態掃描中樞 (無差別並行掃描)】<br/>1. 通用勝負終止掃描：比對劇本勝負與終結判定邏輯 (不預設具體公式)<br/>2. 投票觸發節點掃描：檢查當前時序是否抵達預設之投票表決或指認節點<br/>3. 真相線索解鎖掃描：比對發言進展或動作是否滿足解鎖條件 (獨佔性鎖定)<br/>4. 發言權限更新掃描：檢查玩家狀態變更 (淘汰失能者即刻標記禁言休眠)<br/>5. 流程階段切換掃描：檢查各項進程條件，判定是否推進至下一流程階段"}
+
+    ParallelCheck --"未達成勝負 (推進遊戲)"--> ActionApproved["【機制核准】動作正式生效，寫入公開或私密紀錄"]
+
+    ActionApproved --> GMNarrate["【關主隨行解說與突發通報】<br/>• 獲得/發動道具即時解說<br/>• 人員失能淘汰於大廳敲鐘通報並啟動禁言休眠<br/>• 私聊無共識/超時主持房內投票，引導代表回道具視窗發動<br/>• 觸發隱藏線索多層級分發 (個人/小組/全場)<br/>• 階段切換敲鐘廣播<br/>• 到達投票節點啟動私密投票詢問與大廳計票公示"]
+
+    GMNarrate --> NextTurn["輪次 + 1，調度下一位玩家"]
+
+    ParallelCheck --"達成勝負條件 (觸發終局)"--> BreakLoop["【機制立即中斷輪次循環】<br/>終止後續發言，進入終局復盤"]
+
+    BreakLoop --> GMEarlyWin["【關主發布提前獲勝插播廣播】<br/>於全場大廳插播宣告勝利陣營/玩家"]
+
+    GMEarlyWin --> FinalReview["【步驟 7：終局真相宣讀與復盤評分】<br/>1. 機制統計投票表決與個人秘密目標達成狀況<br/>2. 關主對照核心真相庫宣讀真實真相與因果<br/>3. 產出完整復盤報告與玩家推理評分榜"] --> End([推演完成])
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-card">
+      <h3>核心原則 1：看板直接掛載</h3>
+      <p>讀取劇本後，直接由【看板對照表】判定開啟 5 大通用看板。機制不決定開板，專職在開局後入場主持與守門。</p>
+    </div>
+    <div class="legend-card">
+      <h3>核心原則 2：思考參考依據</h3>
+      <p>玩家行動前必須調閱「個人主觀看板 (心智筆記)」、「個人看板歷史紀錄」、「公共看板歷史紀錄」與「客觀真理圖譜」，進行深度思考。</p>
+    </div>
+    <div class="legend-card">
+      <h3>核心原則 3：看板專屬條列審查</h3>
+      <p>5 大看板具備專屬條列審查條件。私聊房間特別納入「若規則需共識但無共識則強制發起微投票」。</p>
+    </div>
+    <div class="legend-card">
+      <h3>核心原則 4：全域 5 大狀態掃描</h3>
+      <p>不預設贏的公式，動作結算後無差別並行掃描：通用勝負終止、是否需要投票、真相線索解鎖、發言權限更新、流程階段切換。</p>
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true });
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.controls button').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById('tab-' + tabId).classList.add('active');
+      document.getElementById('btn-' + tabId).classList.add('active');
+    }
+  </script>
+</body>
+</html>
