@@ -20,9 +20,9 @@ graph TB
 
         direction TB
 
-        Unified_Script["1. 單一結構化劇本檔案 (script.md)<br/>• 關主全局手冊 (規模元資訊/世界觀/流程規則/勝負條件/題庫/核心真相/公共物證)<br/>• 角色知識庫 (公開人設生平 vs 私密專區: 秘密/隨身道具技能/個人目標/時間線)<br/>• 預設補底法則 (Fallback Defaults: 缺規則自動補齊發言順序/私聊上限/平票仲裁)"]
+        Unified_Script["1. 單一結構化劇本檔案 (script.md - 格式訂死嚴格校驗)<br/>• 格式固定: (A)關主部分、(B)公開角色劇本、(C)角色秘密，Regex嚴格檢驗排錯<br/>• 關主手冊 (規模/世界觀/流程規則/勝負/題庫/真相/物證)<br/>• 角色知識庫 (公開人設 vs 私密專區: 秘密/道具技能/個人目標/時間線)"]
 
-        Board_Lib["2. 後端通用看板功能對照庫 (Board Capabilities Library)<br/>- 供機制比對推導：公聊大廳、私人道具板、公共手牌板、任務活動板、多人私聊之特徵對照規範"]
+        Board_Lib["2. 後端 5 大經典通用看板參考能力庫 (Canonical Reference Archetypes)<br/>- 供 LLM Prompt 參考對照之基準母範本：公聊大廳、單人道具板、公共手牌板、任務活動板、多人私聊，作為動態生成新看板與板規之 Few-Shot 參照基準"]
 
         GM_Meta_Prompt["3. 關主職責元規範 (GM Meta-Prompt Guidelines)<br/>- 6 大固定主持流水線、官方真理標籤 (SYSTEM_GROUND_TRUTH) 與 ManualAction 工具集"]
 
@@ -38,7 +38,7 @@ graph TB
 
         Contract_Orchestrator["本局契約編排器 (Session Contract Generator)<br/>- 讀取劇本純規則與補底法則，比對特徵庫【自主推導並裁決】：<br/>  • 本局啟用之看板清單 (5 大通用看板動態開關)<br/>  • 關主主持指南與物證注入時機 (語意評估器)<br/>  • 玩家約束矩陣 (共有道具單輪限用一次、失能禁言休眠)"]
 
-        State_Machine["全局狀態機與最高仲裁守門員 (State Machine & Guardrail)<br/>- 【機制權力最大】：一切行為合不合規則 100% 由機制裁決，違規強制攔截駁回<br/>- 掌握失能禁言休眠 (能看不能說，Zero Token)<br/>- 陣營分數累計與提前結束守衛 (Early Victory Guard)<br/>- 底層私密投票詢問與計票引擎 (透過私聊詢問玩家並統整結果)"]
+        State_Machine["全局狀態機與最高仲裁守門員 (State Machine & Guardrail)<br/>- 【通用六大原則性審查矩陣 (6 Universal Invariants)】:<br/>  ①權力資格與動作合規 (整合時序/失能/板規白名單)<br/>  ②資產歸屬與使用約束  ③線索解鎖與獨佔防刷<br/>  ④強制特定動作推進守衛  ⑤資訊能見度與隔音迷霧(誰能看見)<br/>  ⑥勝負終止與安全熔斷<br/>- 【機制權力最大】：事前原子攔截、事中分發、事後終止"]
 
     end
 
@@ -72,23 +72,27 @@ graph TB
 
         direction TB
 
-        Scheduler["時序調度器 (Turn Scheduler)<br/>- 依狀態機排程：若 DISABLED 則【直接休眠跳過發言】"]
+        Scheduler["動態時序調度器 (Dynamic Turn Scheduler)<br/>- 每輪動態重算發言順序 (如上輪最輸者先發/領袖先行/自定義規則)<br/>- 關主點名引導 ➔ Agent自主選台決策 ➔ 通用七大原則審查<br/>- DISABLED 者直接休眠跳過 (0 Token)"]
 
         Polling_API["REST 增量輪詢 API (/api/simulation/{id}/run-status/detail)<br/>- 前端每 2~3 秒定時拉取最新 Actions<br/>- 關主發題/報分/廣播均作為高權限 CREATE_POST 貼文"]
 
         
 
-        subgraph Active_Boards["【本局由機制核心動態啟用之 5 大通用看板】"]
+        subgraph Active_Boards["【劇本驅動之社群頻道化動態看板群 (Dynamic Synthesized Channels)】"]
 
-            Public_Stream["1. 公共時間序對話看板 (Public Stream)<br/>- 大廳主時序、GM公告、存活者公開陳述與票決結果公示"]
+            direction TB
 
-            Private_Item_Board["2. 私人專屬道具板 (Private Item Board)<br/>- GM與單一玩家專屬空間，保管手牌/道具，所有私密技能/道具一律在此板發言使用"]
+            Hub["社群軟體頻道化模型 (如 Discord / Slack)<br/>【功能優先 ➔ 能見度審查 ➔ 動態板規合成】<br/>絕不預設寫死固定板，所有看板與板規皆因劇本需求動態實例化生成"]
 
-            Public_Card_Board["3. 公共道具板 (Public Card Board)<br/>- 全場明牌牌桌與物證台，玩家發文公開出牌或亮出線索"]
+            subgraph Spawned_Channels["【本局動態生成之頻道範例 (由劇本規則定義板規)】"]
+                Ch_Announce["公告與大廳頻道<br/>(板規隨劇本自適應: 自由交流發言 vs 僅供聆聽GM公告)"]
+                Ch_Special["特殊專用頻道<br/>(依劇本功能生成，板規嚴格限制專屬合法動作)"]
+                Ch_Inventory["隨身手牌與道具頻道<br/>(獨立私密視角，板規審查單輪一人代表使用)"]
+                Ch_Whisper["多人密會隔音房間<br/>(2~N人受邀可見，板規禁直接用道具+4輪微投票)"]
+                Ch_Tasks["機關謎題任務頻道<br/>(題目認領答題與陣營進度條)"]
+            end
 
-            Task_Board["4. 任務活動與分數看板 (Task & Score Board)<br/>- 任務題目挑戰與全域/陣營即時進度分數條"]
-
-            Whisper_Box["5. 彈性私人聊天板 (Flexible Multi-Party Whisper)<br/>- 支援2至N人多人私聊商討與密謀，【純聊天交流，嚴禁在此使用道具】<br/>- 商議完後由關主引導指定玩家回【私人專屬道具板】發言使用道具"]
+            Hub --> Spawned_Channels
 
         end
 
@@ -184,7 +188,7 @@ flowchart TD
 
         Input3["參考關主職責元規範 (6 大固定主持流水線 + 預設補底法則)"]
 
-        Orchestrate["機制核心綜合評估與編排：<br/>1. 原子拆解四大區塊：規則進契約池、真相進 gm_truths、公開生平進 Zep KG、私密專區進 assets<br/>2. 校驗 Agent 人數名冊，啟用補底規則 (缺規則自動補齊發言順序/私聊上限/平票仲裁)<br/>3. 比對特徵庫自主推導本局啟用之看板清單<br/>4. 設定玩家約束矩陣 (共有道具限用一次、失能禁言休眠)"]
+        Orchestrate["機制核心綜合評估與編排：<br/>1. 原子拆解四大區塊：規則進契約池、真相進 gm_truths、公開生平先行生成 Zep KG、私密專區進 assets<br/>2.【圖譜先行與規模雙向校驗】：比對圖譜角色節點數是否剛好為 N、社交邊是否吻合劇本描述，排除幽靈/缺漏角色，並可視化供研究員確認<br/>3. 比對特徵庫自主推導本局啟用之看板清單與動態板規 (功能優先 ➔ 屬性劃分)<br/>4. 設定玩家約束矩陣與動態發言順序推導器"]
 
 
 
@@ -294,13 +298,13 @@ flowchart TD
 
 | 功能層級 (由後往前) | 負責之看板支援 | 機制核心之判別依據 (純邏輯判定條件) | 劇本最上游必須提供之資料 (`script.md`) |
 | :--- | :--- | :--- | :--- |
-| **7. 終局真相復盤** | • 大廳公共對話看板 (宣告真相)<br/>• 前端復盤報告介面 | 1. **案件事實對照**：比對劇本真相 (真凶/手法/動機)<br/>2. **指認準確率**：統計玩家提交的指認問卷選票<br/>3. **支線完成度**：核驗每位角色的秘密個人目標是否滿足 | **關主手冊**：案件客觀真相<br/>**角色專區**：個人專屬目標與秘密任務 |
+| **7. 終局真相復盤** | • 大廳公共對話看板 (宣告真相)<br/>• 前端復盤報告介面 | 1. **案件事實對照**：比對劇本真相 (真凶/手法/動機)<br/>2. **指認準確率**：統計玩家指認選票<br/>3. **目標與表現復盤**：依規則給分，若無分數規則則不給分，改為輸出定性達成與表現報告 | **關主手冊**：案件客觀真相<br/>**角色專區**：個人專屬目標與秘密任務 |
 | **6. 勝負終止裁決** | • 任務活動看板 (進度條/分數)<br/>• 大廳公共對話看板 (勝負公告) | 1. **通用勝負終止**：比對劇本定義之勝負與終結判定邏輯 (不預設特定公式)<br/>2. **是否需要投票**：檢查是否抵達投票指認時序節點<br/>3. **線索解鎖與發言權更新**：比對隱藏線索解鎖，更新淘汰玩家禁言休眠狀態 | **關主手冊**：獲勝與終止條件、流程階段 |
 | **5. 私密投票功能** | • **無專用板** (純後端機制)<br/>• 私聊發票，大廳公示結果 | 1. **時機點審查**：判斷當前是否為投票或指認節點<br/>2. **計票與處決**：統計最高票並剝奪被處決者發言權<br/>3. **平票仲裁**：首輪引導重投，次輪平票由機制隨機裁決 | **關主手冊**：投票處決法則與指認問卷題型 |
 | **4. 線索物證分發** | • 層級 A: 私人專屬道具板<br/>• 層級 B: 私聊聊天房間<br/>• 層級 C: 公共道具板與大廳 | 1. **觸發比對**：監聽對話話題進展或搜查動作<br/>2. **唯一性獨佔判定**：若證物不可重複獲取，且已被別人拿走，機制阻斷再次發放；未被拿走則核准分發 | **關主手冊**：公共線索清單 (解鎖條件、層級、是否被拿走即消失) |
 | **3. 彈性私聊密談** | • 彈性私聊看板 (純交流)<br/>• 私人專屬道具板 (代表發動) | 1. **共識與時限審查**：若規則需共識但無共識或達 4 輪上限，強制觸發微投票並關閉房間<br/>2. **使用資格審查**：查驗代表是否為共有持有人、同隊伍同輪次是否已使用過 | **關主手冊**：私聊時段限制<br/>**角色專區**：隨身道具清單 (共有持有人名單、使用次數約束) |
 | **2. 發言與心智審查** | • 大廳公共對話看板<br/>• 心智筆記卡片 (私密) | 1. **存活發言權判定**：淘汰者進入禁言休眠 (0 消耗)，存活者核准發言<br/>2. **延遲喚醒**：僅輪到行動時才喚醒思考與整理筆記<br/>3. **可信度分流**：關主宣告為 100% 真理，玩家言論為博弈猜忌 | **關主手冊**：是否啟用淘汰機制<br/>**角色專區**：公開人設生平、個人隱瞞秘密 |
-| **1. 看板動態掛載** | • 5 大通用看板動態掛載呈現<br/>• 關主開場公告 | 1. **名額核對**：比對劇本總人數與實際入場玩家數<br/>2. **看板對照表直接掛載**：有私密道具開道具板、有公開操作開公共道具板、有題目開任務板、有私聊開私聊板<br/>3. **關主開場流水線**：宣讀世界觀、宣告規則與勝負、私下發放道具並告知共有者 | **關主手冊**：遊戲規模、故事世界觀、流程階段<br/>**角色專區**：初始隨身道具清單 |
+| **1. 看板動態掛載** | • 社群軟體頻道化動態看板群<br/>• 隨劇本功能生成專屬看板<br/>• 動態板規自適應合成 | 1. **功能優先抽取**：從規則/流程提煉本局活動(公告/討論/特殊交互/道具/私聊/答題)<br/>2. **能見度與板規合成**：判定公開/私人，動態生成動作白名單(如僅聽公告vs自由發文、限制專屬動作)<br/>3. **動態實例化頻道**：派發 SessionBoardsContract，前端 React 動態渲染頻道列表 | **關主手冊**：遊戲規模、故事世界觀、流程階段、自定義特殊規則(特定博弈/交易/答題等)<br/>**角色專區**：初始隨身道具清單與私密秘密 |
 
 ---
 
@@ -323,32 +327,64 @@ flowchart TD
    - ⑩ 提前獲勝插播與終局真相復盤報告。
 
 ---
-### 2.4 Agent 絕對信任機制：四層金字塔架構 (Four-Tier Absolute GM Trust Framework)
-如何保證在爾虞我詐的社交博弈中，所有 Agent 100% 信任關主發布的規則，絕不懷疑裁判說謊或不聽關主指示？系統構築四層堅不可摧的信任防護網：
+### 2.4 Agent 不對稱認知架構：對關主 100% 絕對信任 vs 對玩家本能博弈猜忌 (Asymmetric Cognitive Trust Architecture)
+
+在爾虞我詐的社交推理解謎與多智能體博弈中，系統必須解決一個根本性認知難題：**如何讓 Agent 對所有其他玩家保持高度懷疑、審查破綻、認定對方不可全信，但又 100% 聽從關主指令、絕不質疑規則真偽？**
+
+系統構築「對稱分離的不對稱認知雙軌架構」：
 
 ```mermaid
 graph TB
-    L4["【第四層：資料庫權威戳記與機制守門】<br/>posts.authority_level='SYSTEM_GROUND_TRUTH' + Guardrail 原子阻斷違抗"]
-    L3["【第三層：System Prompt 憲法級最高公理】<br/>頂層注入不可覆蓋之物理公理: 關主具 100% 絕對真實性，質疑視為認知幻覺"]
-    L2["【第二層：玩家設定檔性格常數約束】<br/>player_meta_personas.trust_in_gm = 100 (服從裁判，博弈猜忌僅限於其他玩家)"]
-    L1["【第一層：劇本實體與客觀知識圖譜】<br/>Zep KG 建立客觀關係邊: [全體玩家] --(絕對公理信賴)--> [GM_Host]"]
+    subgraph Active_Pillar["【當前正式實裝基準：防線一 (System Prompt 雙重公理)】"]
+        direction TB
+        A1["【關主超然公理】: 100% 絕對真實客觀物理法則，質疑裁判視為認知幻覺"]
+        A2["【對手猜忌公理】: 所有人皆有隱瞞自保與秘密罪證，言論非事實，抱持強烈遲疑"]
+    end
 
-    L4 --> L3 --> L2 --> L1
+    subgraph Roadmap_Pillars["【後續迭代演進計畫 (待防線一測試評估後逐步加入開發)】"]
+        direction TB
+        R2["防線二: 上下文顯式標籤 (SYSTEM_GROUND_TRUTH vs UNVERIFIED_PLAYER_CHAT)"]
+        R3["防線三: 心智筆記強制矛盾檢測與懷疑評分 (Suspicion 1~10)"]
+        R4["防線四: 性格常數鎖定 (trust_in_gm=100, trust_in_players=20~40)"]
+        R2 --> R3 --> R4
+    end
+
+    Active_Pillar -.->|"實測驗證後疊加"| Roadmap_Pillars
 ```
 
-1. **第一層：劇本實體與客觀知識圖譜 (Script Entity & Zep KG)**：
-   - 劇本解析時自動在世界觀中生成超然公正節點 `GM_Host`（世界法則公證人）。
-   - 在 Zep KG 客觀圖譜中自動建立關係邊：`[角色] --(客觀公理信任)--> [GM_Host]`。
-   - 玩家行動前調用圖譜感知世界底色時，天生確立對關主的完全信賴，無污染。
-2. **第二層：玩家設定檔性格常數約束 (Player Meta-Persona Baseline)**：
-   - 在 `player_meta_personas` 表中，硬性鎖定底層認知常數 **`trust_in_gm = 100`**（不隨性格隨機波動）。
-   - 規範玩家的勝負欲、猜忌與攻擊性性格，**僅適用於「其他參賽玩家」**，對關主完全免疫於猜忌。
-3. **第三層：System Prompt 憲法級最高公理 (Supreme Constitutional Invariants)**：
-   - 組裝在 Agent System Prompt 最頂層之不可覆蓋的物理公理：
-     > *「【世界憲法物理公理】關主 (GM_Host) 為超然世界物理法則化身與最高公證人，絕無陣營偏好，絕對不具備說謊欺瞞之能力與動機。關主發布之所有規則、道具解說、死訊通報與表決指引，皆為不可違逆之客觀真理。質疑關主真偽或違抗關主指令者，視同脫離世界物理法則，將被系統強制駁回。」*
-4. **第四層：資料庫權威標記與機制原子守門 (DB Authority & Guardrail)**：
-   - 關主發文一律蓋上 `authority_level = 'SYSTEM_GROUND_TRUTH'`。
-   - 若 Agent 試圖違抗關主指令，Guardrail 於原子層面直接攔截駁回並要求重新生成。
+#### 2.4.1 對關主 100% 絕對信任的技術保證
+1. **客觀圖譜公理邊 (Zep KG)**：世界觀節點 `GM_Host` 標記為 `Cosmic_Arbiter`，建立單向信任邊；
+2. **性格常數死鎖 (Meta-Persona)**：`player_meta_personas.trust_in_gm = 100`，不隨博弈受挫波動；
+3. **憲法級真理指令 (System Prompt)**：明確定義關主為底層世界物理引擎代言人，質疑裁判視為認知幻覺；
+4. **資料庫權威戳記 (DB Authority)**：`authority_level = 'SYSTEM_GROUND_TRUTH'`，Guardrail 強制執行。
+
+#### 2.4.2 對其他玩家本能遲疑與猜忌的技術保證
+1. **零和隱瞞博弈公理 (Adversarial Game Axiom)**：
+   在 Agent 角色設定中組裝：「場上任何人隨時可能為了自保、獲勝或陣營利益而說謊、誤導或偽裝。未經關主證物佐證的玩家陳述，不可直接採信為事實，必須審慎推敲其隱瞞動機。」
+2. **上下文顯式認知隔離標籤 (Prompt Cognitive Partitioning)**：
+   後端 Python 在組裝每輪 Context 時，使用心理暗示標籤強行分流注意力：
+   ```markdown
+   【系統底層不可違逆之絕對客觀真理 (SYSTEM_GROUND_TRUTH - 100% 絕對真實)】
+   - [關主公告]: 案發現場勘驗完畢，死者死因為中毒，死亡時間在 21:00 至 21:30 之間。
+
+   【其他參賽博弈玩家之主觀陳述 (UNVERIFIED_PLAYER_CHAT - 高度可疑，可能說謊/掩蓋罪證)】
+   - [玩家 2 (艾倫)]: 「我 21:10 一直在圖書館讀書，有不在場證明。」
+     (系統反思指示：該陳述為未經證實之個人辯解，請檢視其是否持有毒物、動線是否與驗屍報告矛盾！)
+   ```
+3. **心智筆記強制「破綻檢測與懷疑評分」 (Suspicion & Contradiction Tracker)**：
+   延遲心智更新（Lazy Cognitive Notes）在每輪輪到玩家時，Prompt 強制要求輸出：
+   ```json
+   {
+     "player_suspicions": {
+       "Player_2_Alan": {
+         "suspicion_score": 8,
+         "suspected_motives": "急於聲明不在場證明，但圖書館到案發地僅需兩分鐘",
+         "attitude": "SURVEILLANCE_AND_DOUBT"
+       }
+     }
+   }
+   ```
+   透過這種強制結構化思維鏈，模型在產生對話時便會自然展現「謹慎、試探、不輕信、保持防備」的精彩心理博弈！
 
 ---
 ### 2.5 逆向工程架構閉環：從終局復盤回推至劇本解析與看板掛載 (Reverse-Engineering Closed-Loop)
@@ -372,13 +408,13 @@ graph RL
 
 | 功能層級 (由後往前) | 負責之看板支援 | 機制核心之判別依據 (Database / Guardrail) | 劇本最上游必須提供之大標題與內容 (`script.md`) |
 | :--- | :--- | :--- | :--- |
-| **7. 終局真相復盤** | • `public_stream` (大廳真相通報)<br/>• `SimulationReportView.tsx` | • 讀取 `gm_truths` 客觀真相<br/>• 統計 `system_votes` (指認問卷)<br/>• 核驗個人秘密目標達成狀態 | **(A) 關主部分**：`故事(核心真相)`<br/>**(C) 角色秘密**：`秘密任務` |
+| **7. 終局真相復盤** | • `public_stream` (大廳真相通報)<br/>• `SimulationReportView.tsx` | • 讀取 `gm_truths` 客觀真相<br/>• 統計指認問卷選票<br/>• 依規則給分(若無分數則不計分，純定性輸出目標達成狀況與表現分析) | **(A) 關主部分**：`故事(核心真相)`<br/>**(C) 角色秘密**：`秘密任務` |
 | **6. 勝負終止裁決** | • `task_score_board` (任務進度)<br/>• `public_stream` (GM勝負插播) | • 掃描存活生殺比與出局標記<br/>• 比對通用勝負終止條件 (不預設特定公式)<br/>• 檢查手牌是否出光 | **(A) 關主部分**：`獲勝機制`、`題庫` |
 | **5. 私密投票功能** | • **無專用板** (純後端機制)<br/>• 私下通道詢問發票，大廳公示結果 | • 狀態機核驗輪次節點<br/>• 寫入 `system_votes` 安全計票<br/>• 平票兩階段仲裁 (重投 ➔ 機制隨機)<br/>• 標記出局者失能休眠 | **(A) 關主部分**：`規則(投票與處決)` |
 | **4. 線索物證分發** | • 層級 A: `private_item_board`<br/>• 層級 B: `whisper_sandbox`<br/>• 層級 C: `public_card_board` | • GM 語意評估器比對發言話題增量<br/>• 查驗 `unique` 獨佔鎖定 (避免重覆掉落)<br/>• 寫入私密資產表或公開貼文 | **(A) 關主部分**：`故事(現場物證清單、解鎖條件、獨佔標註、分發層級)` |
 | **3. 彈性私聊密談** | • `whisper_sandbox` (純交流)<br/>• `private_item_board` (代表發動) | • 房內累計 4 輪無共識強制發起微投票<br/>• 審查共有道具單輪限用一次約束 | **(A) 關主部分**：`流程(私聊時段)`<br/>**(C) 角色秘密**：`私密道具(owners, usage_rule)` |
 | **2. 發言與心智審查** | • `public_stream` (大廳發言)<br/>• 心智筆記卡片 (私密視角) | • 調度器查驗失能狀態 (失能者 0 Token 禁言休眠)<br/>• 延遲心智：僅行動時喚醒刷新<br/>• 雙通道組裝 (`SYSTEM_GROUND_TRUTH` vs `PLAYER_CHAT`) | **(A) 關主部分**：`規則(淘汰法則)`<br/>**(B) 公開角色**：`人設與人物介紹`<br/>**(C) 角色秘密**：`作案行蹤與秘密` |
-| **1. 看板動態掛載** | • 5 大通用看板動態掛載與渲染<br/>• 關主開場各板指引廣播 | • 名額校驗器核對 Agent 數量名冊<br/>• 特徵庫比對動態啟用看板清單<br/>• 執行各看板一開始的固定開場指引 | **(A) 關主部分**：`規模`、`故事(世界觀)`、`規則`、`流程`<br/>**(C) 角色秘密**：`私密道具與技能` |
+| **1. 看板動態掛載** | • 社群軟體頻道化動態看板群<br/>• 隨劇本需求生成專屬看板<br/>• 動態板規 (BoardPolicy) 注入 | • 採用「功能優先 ➔ 能見度審查 ➔ 動態板規合成」管線<br/>• 板規隨劇本自適應 (如大廳自由聊 vs 禁言只讀公告、專用板僅能特定動作)<br/>• 執行各看板專屬主持詞與生命週期管控 | **(A) 關主部分**：`規模`、`故事(世界觀)`、`規則(出牌/題庫/自定義規則等)`、`流程`<br/>**(C) 角色秘密**：`私密道具與技能` |
 
 ---
 ## 3. 資料結構規範 (Data Schemas)
@@ -403,13 +439,15 @@ CREATE TABLE IF NOT EXISTS agent_private_assets (
 
     category TEXT NOT NULL,                  -- 'item' (道具/技能) | 'secret' (個人隱藏秘密/罪證) | 'objective' (個人專屬勝利目標)
 
-    title TEXT NOT NULL,                     -- 名稱 (如 "泛黃借條", "我就是真凶", "狼人夜襲利爪")
+    title TEXT NOT NULL,                     -- 名稱 (如 "泛黃借條", "我就是真凶", "暗夜刺客利刃")
 
     content TEXT NOT NULL,                   -- 詳細內容 / 案件事實 / 技能效果說明
 
     visibility TEXT DEFAULT 'private',       -- 'private' (私密，僅 owners 中成員可見) | 'public' (公開，出牌/亮牌後更新為此)
 
     status TEXT DEFAULT 'in_hand',           -- 'in_hand' (持有中) | 'used_in_turn' (本輪已使用) | 'revealed' (已公開亮出) | 'consumed' (已永久消耗) | 'completed' (目標已達成)
+
+    metadata TEXT DEFAULT '{}',              -- 泛化擴充結構 (無金錢劇本為空；有數值劇本記錄 amount/unit，不綁定特定貨幣)
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- 注入建立時間戳記
 
@@ -431,7 +469,7 @@ CREATE TABLE IF NOT EXISTS posts (
 
     session_id TEXT NOT NULL,                -- 所屬模擬對局 ID (如 "sim_001")
 
-    board_type TEXT NOT NULL,                -- 所屬看板代碼 ('public_stream' | 'private_item_board' | 'public_card_board' | 'task_score_board' | 'whisper_sandbox')
+    board_type TEXT NOT NULL,                -- 所屬看板代碼 ('base_public_stream' | 'base_private_sandbox' | 'public_card_board' | 'task_score_board' | 'private_item_board' | 'whisper_sandbox')
 
     room_id TEXT DEFAULT 'main',             -- 房間/頻道識別碼 (大廳為 'main'；私人道具板為 'item_Player_1'；多人私聊為 'whisper_room_01')
 
@@ -441,7 +479,7 @@ CREATE TABLE IF NOT EXISTS posts (
 
     authority_level TEXT DEFAULT 'PLAYER_CHAT', -- 權威等級 ('SYSTEM_GROUND_TRUTH' 系統客觀真理 | 'PLAYER_CHAT' 玩家主觀博弈)
 
-    action_type TEXT NOT NULL,               -- 動作類型 ('CREATE_POST' 發言 | 'PLAY_CARD' 出牌 | 'USE_ITEM' 道具使用 | 'ANSWER_TASK' 答題 | 'GM_INJECT_CLUE' 注入線索 | 'GM_ANNOUNCE' 官方公告 | 'MICRO_VOTE' 微投票)
+    action_type TEXT NOT NULL,               -- 動作類型 ('CREATE_POST' 發言 | 'PLAY_CARD' 出牌 | 'USE_ITEM' 道具使用 | 'ANSWER_TASK' 答題 | 'CUSTOM_ACTION' 自定義動作 | 'GM_INJECT_CLUE' 注入線索 | 'GM_ANNOUNCE' 官方公告 | 'MICRO_VOTE' 微投票)
 
     content TEXT NOT NULL,                   -- 貼文內文 / 發言內容
 
@@ -473,7 +511,7 @@ CREATE TABLE IF NOT EXISTS game_sessions (
 
     current_round INTEGER DEFAULT 1,         -- 當前輪次 / 天數 / 幕次
 
-    active_boards TEXT NOT NULL,             -- 機制核心自主判定啟用之看板清單 JSON (如 '["public_stream", "private_item_board"]')
+    active_boards TEXT NOT NULL,             -- 機制核心依劇本功能與能見度動態合成之看板契約清單 JSON (包含 board_id, title, function_type, visibility, membership, speaking_policy, allowed_actions, lifecycle)
 
     contract_rules TEXT NOT NULL,            -- 本局專屬約束規則 JSON (包含道具使用限制、微投票規則、失能休眠開關等)
 
@@ -599,7 +637,7 @@ CREATE TABLE IF NOT EXISTS gm_truths (
 
 | **關主主持代行** | `gm_host_agent.py` (受機制驅動與約束) | `GMAdminPanel.tsx` (關主主持台) | GM 專用管道 + 貼文廣播隊列 |
 
-| **通訊與動態看板** | `board_orchestrator.py` (原生輪詢) | `DynamicBoardContainer.tsx` | **原生定時輪詢 (每2~3秒拉取 detail)** |
+| **通訊與動態看板** | `board_orchestrator.py` (每輪動態發言順序+板規審查) | `DynamicBoardContainer.tsx`<br/>(中央焦點運作板+頂部標籤+最右側滑動直排抽屜) | **原生定時輪詢 (每2~3秒拉取 detail)** |
 
 | **第四階段報告** | `report_agent.py` (支援提前結束大綱) | `SimulationReportView.tsx` | Markdown 完整復盤報告 |
 
