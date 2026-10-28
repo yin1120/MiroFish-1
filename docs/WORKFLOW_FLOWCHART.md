@@ -1,18 +1,19 @@
 # 通用劇本殺多智能體模擬系統 (Generic LARP Multi-Agent System)
-# 系統端到端完整流程圖與格式規範手冊 (劇本攝入 ➔ 第三階段結束)
+# 系統端到端完整流程圖與格式規範手冊 (劇本攝入 ➔ 第四階段復盤)
 
 ---
 
 ## 1. 系統端到端流程圖體系 (各階段模組化放大獨立視圖與圖形逐節點詳解)
 
 > **圖形規範與視覺清晰度保證**：
-> 1. **獨立大圖化呈現**：將總體架構與各階段拆解為**「1 張總體階段流轉圖 + 6 張各階段獨立放大流程圖」**。每張圖獨立渲染，文字大、排版清晰。
-> 2. **節點僅保留標題**：圖形內各節點遵循指示**僅保留核心標題與流轉關係**，絕不堆砌長篇文字。
-> 3. **圖形下方逐節點對齊詳解**：每張獨立流程圖下方，**直接針對該圖中出現的每個節點、連線判定與輸入輸出進行 1 對 1 解釋**，杜絕圖文脫節。
-> 4. **機制發言權限權威裁決**：在檢查失能狀態時，由**後端機制核心 (The Arbiter)** 統一依據劇本規則與狀態機，主動判定與裁決該玩家當前「是否具備發言權 (Speaking Rights)」！
-> 5. **發言前三大參考依據**：玩家發言決策前，必須綜合參考**「看板歷史紀錄」+「主觀認知表格」+「私密手牌資產」**，刷新心智筆記後再行決策。
-> 6. **私聊與投票穿插於公聊主軸**：彈性私聊/陣營密會與向 GM 私密投票**並非獨立分離，而是作為子線程與決策節點，動態穿插在圓桌公聊主時序之中**！
-> 7. **純黑底白字高對比度**：全面採用純黑背景 (`#000000`)、純白邊框 (`#ffffff`) 與純白字體 (`#ffffff`)，視覺反差極致鮮明。
+> 1. **獨立大圖化呈現**：將總體架構與各階段拆解為**「1 張總體階段流轉概觀圖 + 7 張各階段獨立放大流程圖」**。每張圖獨立渲染，版面開闊、排版清晰。
+> 2. **節點僅保留標題與流轉關係**：遵循高階視覺圖規範，節點內**僅保留核心標題與流轉關係**，絕不堆砌長篇文字。
+> 3. **圖形下方逐節點對齊詳解**：每張獨立流程圖下方，**直接針對該圖中出現的每個節點、連線判定與輸入輸出進行 1 對 1 條列解釋**，杜絕圖文脫節。
+> 4. **劇本驅動功能優先開版**：機制核心讀取劇本規則，自主推導功能需求，劃分公開/私人屬性（單人專屬庫 vs 多人私聊），動態合成 `BoardPolicy`（發言權限、允許動作、3 種生命週期）。
+> 5. **關主主持與每輪前置引導**：關主不僅負責 Round 0 開場宣讀，更在每一輪輪到 Agent 行動前，發表主持引導：「輪到 Agent X，本輪可前往哪些看板、可執行哪些動作」，提供合法邊界。
+> 6. **機制核心五大通用守門法則**：機制在動作提交時強制審查五大客觀法則（①權限資格合規、②資產歸屬約束、③線索獨佔鎖定、④強制作業卡點、⑤勝負終止熔斷）。
+> 7. **Agent 發言參考四大維度**：Agent 決策前必先汲取「①心智筆記 (對全場維持懷疑猜忌)」、「②個人私有看板歷程與資產」、「③公共看板歷史紀錄」、「④關主絕對客觀真理 (100% 絕對信任) 與 Zep 知識圖譜」，刷新第一人稱日記後再行決策。
+> 8. **純黑底白字高對比度**：全面採用純黑背景 (`#000000`)、純白邊框 (`#ffffff`) 與純白字體 (`#ffffff`)，視覺反差極致鮮明。
 
 ---
 
@@ -29,36 +30,36 @@
     'lineColor': '#ffffff',
     'secondaryColor': '#000000',
     'tertiaryColor': '#000000',
-    'fontSize': '22px',
+    'fontSize': '20px',
     'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", "Noto Sans TC", sans-serif'
   }
 }}%%
 flowchart LR
-    P0["【階段 0】<br/>劇本攝入與儲存分流"] --> P0_5["【階段 0.5】<br/>最高機制編排與玩家生成"]
-    P0_5 --> P1["【階段 1】<br/>環境動態掛載與關主開場"]
-    P1 --> P2["【階段 2】<br/>圓桌推演與博弈循環<br/>(彈性私聊與私密投票穿插公聊)"]
-    P2 --> P3["【階段 3】<br/>事件動態觸發與投票結算"]
-    P3 --> Finish(["🏁 第三階段推演結束<br/>交棒第四階段復盤報告"])
+    P0["【階段 0】<br/>劇本嚴格攝入與圖譜先行校驗"] --> P0_5["【階段 0.5】<br/>功能優先動態開版與契約合成"]
+    P0_5 --> P1["【階段 1】<br/>環境動態掛載與關主開場主持"]
+    P1 --> P2["【階段 2】<br/>動態時序、關主引導與機制五大守門<br/>(含 Agent 四維感知心智審議)"]
+    P2 --> P3["【階段 3】<br/>事件動態響應、即興主持與勝負熔斷"]
+    P3 --> P4(["🏁【階段 4】<br/>終局客觀結算與多維復盤報告"])
 
     style P0 fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style P0_5 fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style P1 fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style P2 fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style P3 fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Finish fill:#000000,stroke:#ffffff,stroke-width:3px,color:#ffffff
+    style P4 fill:#000000,stroke:#ffffff,stroke-width:3px,color:#ffffff
 ```
 
 #### 【1.1 流程圖各節點詳細解釋】
-- **節點 `【階段 0】劇本攝入與儲存分流`**：輸入單一劇本檔案，正則提取出關主手冊、核心真相與角色雙區，並實施資料庫與圖譜的物理隔離。
-- **節點 `【階段 0.5】最高機制編排與玩家生成`**：後端最高權限機制核心讀取手冊規則，從預置能力庫中自主決策開啟哪些功能與看板，並驅動 5 大博弈維度的 Profile 生成。
-- **節點 `【階段 1】環境動態掛載與關主開場`**：通訊層根據契約掛載已啟用的看板，關主執行 ManualAction 宣讀世界觀與目標。
-- **節點 `【階段 2】圓桌推演與博弈循環 (彈性私聊與私密投票穿插公聊)`**：輪次調度器依序運行；機制先裁決玩家是否具備發言權，正常玩家綜合看板歷史、主觀心智表格與手牌資產生成決策，並在公聊主時序中隨機穿插彈性私聊/陣營密談（同聊天室窗純發文商議與純發文宣告發動道具/技能）、出牌、答題與向關主私密發文投票。
-- **節點 `【階段 3】事件動態觸發與投票結算`**：答題與出牌觸發關主即興動態處置；守衛判定是否提前勝出；抵達時限則進行私密投票結果彙整與公聊公示。
-- **節點 `🏁 第三階段推演結束`**：第三階段圓桌博弈資料封存，交棒第四階段產出時間序復盤報告。
+- **節點 `【階段 0】劇本嚴格攝入與圖譜先行校驗`**：輸入嚴格 Markdown 格式的單一劇本檔案 (`script.md`)，正則解析拆解為三大區塊，並透過 Zep KG 先行建圖，執行角色數量 $N$ 與關係拓撲一致性校驗，落實三庫物理隔離。
+- **節點 `【階段 0.5】功能優先動態開版與契約合成`**：機制核心以「功能需求優先」原則自主推導所需看板，劃分能見度屬性（公開 vs 私人[單人專屬庫 vs 多人私聊]），合成動態板規契約 (`BoardPolicy`)，並注入雙層人設。
+- **節點 `【階段 1】環境動態掛載與關主開場主持`**：通訊層實例化掛載已啟用的動態看板群；關主於 Round 0 執行 `ManualAction` 高權限開場，宣讀世界觀、目標、時序流程與關主中立裁判職責。
+- **節點 `【階段 2】動態時序、關主引導與機制五大守門`**：每輪開場動態計算發言順序；關主在每位 Agent 行動前進行 Pre-Turn 引導廣播；機制檢查失能狀態；正常 Agent 汲取四維依據（心智懷疑、個人私有、公共歷史、關主 100% 信任）刷新第一人稱日記並決策；機制審查五大通用守門法則後看板中心化發布。
+- **節點 `【階段 3】事件動態響應、即興主持與勝負熔斷`**：捕獲動作事件觸發關主即興動態處置（空投物證、通報死訊、主持微投票）；機制原則五審查是否達成劇本勝負條件，若達標則立即熔斷循環。
+- **節點 `🏁【階段 4】終局客觀結算與多維復盤報告`**：第三階段圓桌博弈結束，機制核心封存完整推演紀錄，依照劇本自帶規則（若無分數則不硬給分）產出客觀真相大白與質性復盤報告。
 
 ---
 
-### 1.2 【階段 0：劇本攝入與物理儲存分流】獨立流程圖
+### 1.2 【階段 0：劇本嚴格攝入、物理儲存分流與圖譜先行雙向校驗】獨立流程圖
 
 ```mermaid
 %%{init: {
@@ -69,39 +70,67 @@ flowchart LR
     'primaryTextColor': '#ffffff',
     'primaryBorderColor': '#ffffff',
     'lineColor': '#ffffff',
-    'fontSize': '20px',
+    'fontSize': '18px',
     'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", "Noto Sans TC", sans-serif'
   }
 }}%%
 flowchart TD
-    Script_File["單一劇本檔案 (script.md)"]
-    Parser["劇本解析與人數校驗器 (script_parser.py)"]
-    Clean_KG["純淨客觀知識圖譜 (Zep KG)"]
-    Asset_DB["單一私密資產資料表 (agent_private_assets)"]
-    Truth_DB["關主核心真相庫 (GM Truth DB)"]
+    Script_File["單一劇本檔案 (script.md)<br/>嚴格固定大標題與正則結構"]
+    Format_Validator["劇本正則與格式嚴格校驗器<br/>(script_parser.py)"]
+    Split_Public["公開客觀人設與世界觀區塊"]
+    Split_Private["私密專區 (道具/技能/秘密/目標)"]
+    Split_Truth["全局核心作案真相 (GM Truth)"]
 
-    Script_File --> Parser
-    Parser -->|"公開背景與生平"| Clean_KG
-    Parser -->|"私密專區 (道具/秘密/任務)"| Asset_DB
-    Parser -->|"全局真相 (僅GM可讀)"| Truth_DB
+    Zep_KG_Builder["純淨客觀知識圖譜構建器 (Zep KG)"]
+    Graph_Scale_Check{"圖譜先行規模一致性校驗器<br/>1. 角色節點總數是否精確等於 N?<br/>2. 角色間關係邊是否吻合無孤立?"}
+
+    Fail_Halt["格式不合或拓撲異常：即刻報錯中斷 (Halt)"]
+    Pass_Graph["圖譜校驗完全吻合：生成客觀拓撲圖譜"]
+
+    Asset_DB["單一私密資產資料表 (agent_private_assets)<br/>通用 metadata JSON 容器，無硬編碼資產"]
+    Truth_DB["關主真相庫快取 (GM Truth DB)<br/>最高物理隔離，僅 GM 與結算模組可讀"]
+
+    Script_File --> Format_Validator
+    Format_Validator --"格式錯誤/標題缺漏"--> Fail_Halt
+    Format_Validator --"正則校驗通過"--> Split_Public
+    Format_Validator --"正則校驗通過"--> Split_Private
+    Format_Validator --"正則校驗通過"--> Split_Truth
+
+    Split_Public --> Zep_KG_Builder
+    Zep_KG_Builder --> Graph_Scale_Check
+    Graph_Scale_Check --"角色數不符 / 存在幽靈節點"--> Fail_Halt
+    Graph_Scale_Check --"規模與關係驗證通過"--> Pass_Graph
+
+    Split_Private --> Asset_DB
+    Split_Truth --> Truth_DB
 
     style Script_File fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Parser fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Clean_KG fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Format_Validator fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Split_Public fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Split_Private fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Split_Truth fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Zep_KG_Builder fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Graph_Scale_Check fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Fail_Halt fill:#000000,stroke:#ffffff,stroke-width:3px,color:#ffffff
+    style Pass_Graph fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style Asset_DB fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style Truth_DB fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
 ```
 
 #### 【1.2 流程圖各節點詳細解釋】
-- **節點 `單一劇本檔案 (script.md)`**：推演的唯一輸入來源，內部劃分為三個一級標題區塊（關主規則手冊、關主核心真相、角色客觀劇本庫）。
-- **節點 `劇本解析與人數校驗器 (script_parser.py)`**：負責文字分流前置校驗，強制比對手冊中的 `玩家人數` 與 `角色名單` 數量，不符則即刻報錯中斷。
-- **連線 `公開背景與生平 ➔ 純淨客觀知識圖譜 (Zep KG)`**：僅將角色公開區的世界觀與客觀事實送入建圖，保證圖譜乾淨，防止 GraphRAG 檢索時好人開天眼。
-- **連線 `私密專區 ➔ 單一私密資產資料表 (agent_private_assets)`**：將全場所有角色的道具、秘密、個人任務寫入同一個 SQLite 資料表，透過 `category` 與 `visibility` 欄位區分。
-- **連線 `全局真相 ➔ 關主核心真相庫 (GM Truth DB)`**：案件兇手身分與作案手法僅存入後端真相快取，僅 GM 與結算模組可讀，物理隔絕於玩家之外。
+- **節點 `單一劇本檔案 (script.md)`**：推演唯一輸入來源，格式完全固定死：`(A) 關主規則手冊`、`(B) 關主核心真相`、`(C) 角色客觀劇本庫`。
+- **節點 `劇本正則與格式嚴格校驗器 (script_parser.py)`**：使用嚴格正則表達式檢查三重大標題、角色段落標籤。若劇本缺少關鍵結構，立即觸發 `Fail_Halt` 拒絕執行並精準回報錯誤行號。
+- **節點 `公開客觀人設與世界觀區塊 ➔ Zep_KG_Builder`**：僅將角色公開區的生平、客觀人際關係、公開時間線送入 Zep 建圖，防止好人 Agent 透過 GraphRAG 檢索時開天眼。
+- **決策節點 `圖譜先行規模一致性校驗器 (Graph_Scale_Check)`**：
+  - 機制核心向 Zep KG 查詢提取出的 `Character` 實體節點總數，強制比對手冊中的 `建議人數: N人`。
+  - 遍歷角色間的關係邊（`Edge`），核對是否與劇本敘述的已知人際網一致，防範幽靈角色或無名節點。
+  - 若 $N$ 不符或角色孤立，立即報錯中斷 (`Fail_Halt`)；校驗一致則放行 (`Pass_Graph`)，提供圖譜可視化以利確認。
+- **節點 `私密專區 ➔ agent_private_assets`**：全場角色私密道具、不可告人秘密、私有任務集中寫入單一 SQLite 資料表，資產附加欄位使用通用 `metadata` JSON 儲存，不硬編碼任何特定遊戲數值（如金錢、體力等）。
+- **節點 `全局核心作案真相 ➔ GM Truth DB`**：案件事實真相、真兇身分與關鍵證物細節僅寫入後端 GM 真相庫，物理隔絕於玩家之外。
 
 ---
 
-### 1.3 【階段 0.5：最高機制編排與玩家生成】獨立流程圖
+### 1.3 【階段 0.5：功能優先動態開版、能見度劃分與板規契約派發】獨立流程圖
 
 ```mermaid
 %%{init: {
@@ -112,51 +141,69 @@ flowchart TD
     'primaryTextColor': '#ffffff',
     'primaryBorderColor': '#ffffff',
     'lineColor': '#ffffff',
-    'fontSize': '20px',
+    'fontSize': '18px',
     'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", "Noto Sans TC", sans-serif'
   }
 }}%%
 flowchart TD
-    Script_Rules["劇本規則手冊 (定義本局有無失能/分數/道具等)"]
-    Board_Lib["通用看板能力庫 (後端預置 5 大看板技術模組)"]
-    GM_Prompt["關主職責元規範 (後端預置裁判原則與主持指南)"]
-    Mechanism_Core["最高權限遊戲機制核心 (The Arbiter)"]
-    Session_Contract["本局執行契約 (動態開啟功能開關與看板)"]
-    Profile_Gen["Profile 玩家個性生成器 (5大博弈維度)"]
-    Player_Agents["雙層人設玩家陣列 (Player Agents)"]
+    Script_Rules["劇本規則與流程章節 (script.md)<br/>自然語言定義之玩法、時序、道具、投票"]
+    Five_Archetypes["經典 5 大通用看板能力原型庫<br/>(Few-Shot Prompt 基準母範本)"]
 
-    Script_Rules --> Mechanism_Core
-    Board_Lib --> Mechanism_Core
-    GM_Prompt --> Mechanism_Core
-    Mechanism_Core --> Session_Contract
-    Mechanism_Core --> Profile_Gen
-    Profile_Gen --> Player_Agents
+    subgraph Function_First_Deduction["【功能優先動態開版演繹流程】"]
+        direction TB
+        Step1_Func["步驟 1：功能優先提取 (Function-First)<br/>提取本局必要之互動功能需求<br/>(發言/暗中密謀/線索展示/謎題挑戰/票決)"]
+        Step2_Visibility["步驟 2：能見度與進場人員劃分 (Visibility Scoping)<br/>• 公開看板 (Public): 全員可見可進<br/>• 私人看板 (Private):<br/>  - 1 人私人看板: 專屬道具庫/私密小本本 (本人+GM)<br/>  - 多人私聊看板: 隔音密談室 (限制 members 名單)"]
+        Step3_Policy["步驟 3：動態板規契約合成 (BoardPolicy Synthesis)<br/>• allowed_actions: 允許操作動作集合<br/>• speaking_permissions: 發言權限 (chat / read-only)<br/>• lifecycle: 3 種生命週期機制 (permanent / cyclical / one_shot_read_only)"]
+        Step4_Centric["步驟 4：看板中心化可見性綁定 (Board-Centric Visibility)<br/>看板自帶能見度，在哪個看板發言直接決定受眾"]
+
+        Step1_Func --> Step2_Visibility --> Step3_Policy --> Step4_Centric
+    end
+
+    Contract_Output["本局動態看板群與執行契約 (Session Contract)<br/>active_boards 清單 + BoardPolicy 規範 + 功能開關"]
+    Profile_Gen["雙層人設 Profile 生成器<br/>(客觀劇本人設 + 5 大博弈性格維度)"]
+    Agents_Ready["初始化玩家 Agent 陣列完畢"]
+
+    Script_Rules --> Function_First_Deduction
+    Five_Archetypes --> Function_First_Deduction
+    Function_First_Deduction --> Contract_Output
+    Contract_Output --> Profile_Gen
+    Profile_Gen --> Agents_Ready
 
     style Script_Rules fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Board_Lib fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style GM_Prompt fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Mechanism_Core fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Session_Contract fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Five_Archetypes fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Function_First_Deduction fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Step1_Func fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Step2_Visibility fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Step3_Policy fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Step4_Centric fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Contract_Output fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style Profile_Gen fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Player_Agents fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Agents_Ready fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
 ```
 
 #### 【1.3 流程圖各節點詳細解釋】
-- **節點 `劇本規則手冊 (定義本局有無失能/分數/道具等)`**：本局劇本提供的自然語言機制說明。機制核心讀取此手冊以辨識：「這局有沒有失能規則？有沒有積分比分？有沒有手牌道具？有沒有私聊密談？有沒有暗投？」。
-- **節點 `通用看板能力庫 (後端預置 5 大看板技術模組)`**：後端預先開發完備的**通用模組能力池**，包含 5 大看板能力規範：
-  1. 公共時間序對話看板能力 (Public Stream)
-  2. 公共手牌/物證亮牌看板能力 (Card Board)
-  3. 任務活動認領與陣營分數看板能力 (Task & Score Board)
-  4. 雙人微型隔音私聊室能力 (Whisper Sandbox)
-  5. 無記名暗投沙盒能力 (Secret Ballot Box)
-- **節點 `關主職責元規範 (後端預置裁判原則與主持指南)`**：後端固定給關主 LLM 的系統級提示詞元規範（GM Meta-Prompt），明訂關主的通用職責：中立裁判、不可擅自洩露核心真相、何時執行 ManualAction、主持詞語氣與事件通報格式。
-- **節點 `最高權限遊戲機制核心 (The Arbiter)`**：後端最高權力中樞。比對劇本規則與能力庫，**自主決定本局功能開關 (`feature_flags`)**：劇本有失能就開啟失能檢查，有題庫計分就開啟分數看板，無相關規則就關閉。
-- **節點 `本局執行契約 (動態開啟功能開關與看板)`**：機制核心輸出的本局唯一契約 JSON，包含功能開關、看板啟用清單、關主主持指南與玩家行為約束規則。
-- **節點 `Profile 玩家個性生成器` ➔ `Player_Agents`**：在客觀劇本之上，為每位玩家注入勝負欲、表達欲、懷疑度、社交主動度、規則熟悉度等 5 大風格維度，生成鮮活的雙層人設玩家。
+- **節點 `經典 5 大通用看板能力原型庫`**：保留作為 Prompt Few-Shot 的基礎母範本（大廳、私聊、手牌、任務、暗投），供機制核心理解常見看板交互型態。
+- **子圖 `【功能優先動態開版演繹流程】`**：
+  - **步驟 1 (`Step1_Func`)**：機制核心先判斷本局劇本需要哪些「功能」（如是否需要點對點交換秘密？是否需要題目解謎？是否需要物證公開？）。
+  - **步驟 2 (`Step2_Visibility`)**：針對識別出的功能，審定其屬性與進場人員限制：
+    - **公開看板 (Public)**：如公告大廳、公共線索板，全場 Agent 與 GM 均可進入。
+    - **私人看板 (Private)**：
+      - *一人私人看板 (Single-Player)*：例如 Agent 專屬私密道具庫、個人秘密小筆記，進場人員嚴格限制為該 Agent 與 GM。
+      - *多人私聊看板 (Multi-Player Whisper)*：例如 2~N 人隔音密會房，進場人員限制為指定的 members 清單。
+  - **步驟 3 (`Step3_Policy`)**：合成該看板專屬之 `BoardPolicy`：
+    - `allowed_actions`: 允許執行的動作集合（如公聊看板僅允許 `["speak"]`；專屬道具板僅允許 `["use_item", "speak"]`；暗投看板僅允許 `["cast_vote"]`）。
+    - `speaking_permissions`: 發言權限模式（`"chat"` 自由發言 vs `"read-only"` 唯讀僅供閱覽）。
+    - `lifecycle`: 3 種生命週期模式：
+      1. `permanent`: 永久開啟，全程可用（如公共大廳、個人私有道具庫）。
+      2. `cyclical`: 週期性/輪次開啟與休眠（依據劇本規則在特定輪次開啟，輪次結束後關閉，下次條件達成再重啟）。
+      3. `one_shot_read_only`: 拋棄式/單次結算後轉唯讀封存（如投票結束後封存公示）。
+  - **步驟 4 (`Step4_Centric`)**：看板中心化可見性（Board-Centric Visibility），Agent 在哪個看板發布貼文，受眾由該看板房間與 membership 自動決定，無需事後複雜計算。
+- **節點 `本局動態看板群與執行契約 (Session Contract)`**：產出本局契約 JSON，向通訊層與關主派發執行參數。
+- **節點 `Profile 生成器 ➔ Agents_Ready`**：為每位角色疊加勝負欲、表達欲、懷疑度、社交主動度、規則熟悉度 5 大博弈維度，完成玩家生成。
 
 ---
 
-### 1.4 【階段 1：環境動態掛載與關主開場】獨立流程圖
+### 1.4 【階段 1：通訊層動態掛載與關主世界觀開場主持】獨立流程圖
 
 ```mermaid
 %%{init: {
@@ -167,39 +214,60 @@ flowchart TD
     'primaryTextColor': '#ffffff',
     'primaryBorderColor': '#ffffff',
     'lineColor': '#ffffff',
-    'fontSize': '20px',
+    'fontSize': '18px',
     'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", "Noto Sans TC", sans-serif'
   }
 }}%%
 flowchart TD
     Session_Contract["本局執行契約 (Session Contract)"]
-    Comm_Hub["通訊層動態掛載所選看板 (REST 輪詢相容)"]
-    GM_Host["關主主持人 (GM Host Agent)"]
-    GM_Opener["關主開場 ManualAction 宣讀"]
-    Public_Stream["公共時間序對話看板 (Public Stream)"]
+    Comm_Hub["通訊層動態看板中心 (REST 輪詢 API)"]
+    GM_Host["關主主持人 (GM Host Agent)<br/>載入主持指南與職責元規範"]
 
-    Session_Contract -->|"啟用看板清單"| Comm_Hub
-    Session_Contract -->|"主持指南與題庫"| GM_Host
-    GM_Host --> GM_Opener
-    GM_Opener --> Public_Stream
+    Mount_Boards["動態實例化並掛載契約看板群<br/>(公開大廳 / 專屬道具庫 / 任務板 / 預備密聊室)"]
+    GM_Round0_Action["關主 Round 0 開場主持 (ManualAction)<br/>跳過隨機性，強制打上權威真理標籤<br/>(authority_level='SYSTEM_GROUND_TRUTH')"]
+
+    subgraph GM_Opening_Speech["【關主開場主持宣讀核心內容】"]
+        direction TB
+        Open_World["1. 宣讀世界觀與突發事件背景"]
+        Open_Rules["2. 宣讀本局勝負目標、輪次時序與推進流程"]
+        Open_Duties["3. 宣讀關主職責：中立裁判、維護秩序、引導推演"]
+        Open_World --- Open_Rules --- Open_Duties
+    end
+
+    Public_Announce["公共大廳看板頂端置頂展示 (Public Stream)<br/>作為全場 100% 信任之不可質疑客觀事實"]
+
+    Session_Contract -->|"動態看板清單"| Comm_Hub
+    Session_Contract -->|"主持指南與規則"| GM_Host
+    Comm_Hub --> Mount_Boards
+    GM_Host --> GM_Round0_Action
+    GM_Round0_Action --> GM_Opening_Speech
+    GM_Opening_Speech --> Public_Announce
 
     style Session_Contract fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style Comm_Hub fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style GM_Host fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style GM_Opener fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Public_Stream fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Mount_Boards fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style GM_Round0_Action fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style GM_Opening_Speech fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Open_World fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Open_Rules fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Open_Duties fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Public_Announce fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
 ```
 
 #### 【1.4 流程圖各節點詳細解釋】
-- **節點 `本局執行契約 (Session Contract)`**：前一階段產出的規格契約，向通訊層與關主派發執行參數。
-- **節點 `通訊層動態掛載所選看板 (REST 輪詢相容)`**：通訊中心依據契約中 `activated_boards` 的布林值，只掛載本局被啟用的看板（未啟用的看板不實例化），並與前端定時輪詢路由綁定。
-- **節點 `關主主持人 (GM Host Agent)`**：接收契約中的主持指南與題庫清單，準備開場。
-- **節點 `關主開場 ManualAction 宣讀`**：在輪次 0 執行高權限廣播，跳過 LLM 隨機性，宣讀世界觀、陣營任務與本局規則。
-- **節點 `公共時間序對話看板 (Public Stream)`**：接收關主開場貼文並推送到頂端，作為全場 100% 信任的絕對客觀事實。
+- **節點 `通訊層動態看板中心` ➔ `Mount_Boards`**：依據契約中的動態看板清單，實例化相應路由與記憶體快取。未被劇本啟用的看板絕不掛載。
+- **節點 `關主主持人 (GM Host Agent)`**：由後端啟動的主持人實體，加載 GM Meta-Prompt（中立客觀、嚴守真相、維護規則）。
+- **節點 `關主 Round 0 開場主持 (ManualAction)`**：在輪次 0 觸發高權限廣播，跳過 LLM 幻想隨機性，所有發文自動標記為 `authority_level='SYSTEM_GROUND_TRUTH'`。
+- **子圖 `【關主開場主持宣讀核心內容】`**：
+  - 1. **世界觀與突發事件**：故事起因與全域危機。
+  - 2. **本局勝負目標與輪次流程**：陣營勝負條件、輪次上限、階段推進機制。
+  - 3. **關主職責與紀律宣導**：重申關主為中立裁判，不介入玩家陣營偏好，負責主持秩序與推進流程。
+- **節點 `公共大廳看板頂端置頂展示`**：所有玩家 Agent 感知層的絕對真理錨點，不可被質疑。
 
 ---
 
-### 1.5 【階段 2：第三階段圓桌推演與博弈循環】獨立流程圖
+### 1.5 【階段 2：動態時序、關主引導與機制五大通用守門法則】獨立流程圖
 
 ```mermaid
 %%{init: {
@@ -210,108 +278,92 @@ flowchart TD
     'primaryTextColor': '#ffffff',
     'primaryBorderColor': '#ffffff',
     'lineColor': '#ffffff',
-    'fontSize': '18px',
+    'fontSize': '17px',
     'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", "Noto Sans TC", sans-serif'
   }
 }}%%
 flowchart TD
-    Scheduler["輪次時序調度器 (Turn Scheduler)"]
-    
-    %% 第一層：機制核心發言權威審查
-    subgraph Arbiter_Gate["【第一層：機制核心發言權威審查】"]
+    Round_Start(["輪次開始 (Round N)"])
+    Dynamic_Order["動態時序計算器 (Dynamic Turn Scheduler)<br/>依據劇本規則動態重算發言順序清單<br/>(例如：上輪最落後者先發 / 領先者先發 / 順時針輪替)"]
+    Next_Agent["選取當前行動 Agent X"]
+
+    GM_Preturn_Host["關主每輪主持引導 (Pre-Turn Guidance)<br/>GM 發布引導詞：'輪到 Agent X 行動，本輪依據規則<br/>可前往哪些看板、可執行哪些動作'"]
+
+    Arbiter_Perm_Check{"機制發言權威審查<br/>該 Agent 是否處於 DISABLED 失能狀態?"}
+    Skip_Sleep["禁言休眠模式 (Mute Sleep)<br/>跳過行動 / 0 Token / 持續於背景接收事實"]
+
+    Agent_Cognitive_Turn["Agent 喚醒：進行四維感知與心智審議<br/>(心智筆記猜忌 + 私有資產 + 公共歷史 + 關主真理)"]
+    Agent_Decision["輸出決策三元組：<br/>target_board + thought + speech + action"]
+
+    subgraph Five_Universal_Guardrails["【機制核心五大通用守門法則審查 (5 Universal Invariants)】"]
         direction TB
-        Rule_Check{"劇本規則判斷：本局是否啟用失能/禁言規則?"}
-        State_Check{"狀態機裁決：該玩家是否處於 DISABLED 失能?"}
-        Perm_Revoked["機制裁決：剝奪發言權 (REVOKED)"]
-        Perm_Granted["機制裁決：核准發言權 (GRANTED)"]
+        Inv1{"原則一：權限資格與動作合規<br/>時序是否正確? 是否具進場資格?<br/>動作是否被 target_board 之 BoardPolicy 允許?"}
+        Inv2{"原則二：資產所有權與約束<br/>資產是否在 agent_private_assets 且屬本人?<br/>是否已被消耗? 共享道具單輪限一人?"}
+        Inv3{"原則三：線索探索與唯一性鎖定<br/>發言是否命中線索語意觸發詞?<br/>若線索具 unique:true 是否已觸發鎖定?"}
+        Inv4{"原則四：強制作業與階段卡點守衛<br/>本階段若有強制暗投/微投票等作業，<br/>未全員完成前強制阻擋跨階段推進"}
+        Inv5{"原則五：勝負終止與安全熔斷<br/>是否達成劇本勝負條件或觸發提前勝利?<br/>若是立即中斷輪次；死局超時則仲裁破局"}
+
+        Inv1 --> Inv2 --> Inv3 --> Inv4 --> Inv5
     end
 
-    Skip_Sleep["失能禁言休眠 (Mute Sleep / 跳過發言 / 零 Token / 背景接收事實)"]
+    Action_Rollback["機制強制攔截駁回 (Rollback & Retry)"]
+    Board_Publish["看板中心化發布與動態穿插執行<br/>(發布至 target_board，能見度自動由看板決定)"]
 
-    %% 第二層：多維依據感知與心智審議
-    subgraph Multi_Perception["【第二層：多維依據感知與心智審議】"]
-        direction TB
-        Board_History["1. 看板歷史紀錄 (全場公聊對話流/任務比分/關主物證)"]
-        Mind_Table["2. 主觀認知表格 (純文字心智筆記/對全場懷疑矛盾)"]
-        Card_Assets["3. 私密手牌資產 (本人暗牌道具/秘密/個人目標)"]
-        Write_Notes["撰寫/刷新第一人稱半結構化心智筆記"]
-        
-        Board_History ~~~ Mind_Table ~~~ Card_Assets
-        Board_History --> Write_Notes
-        Mind_Table --> Write_Notes
-        Card_Assets --> Write_Notes
-    end
+    Check_Round_End{"全體順序清單行動完畢?"}
+    Round_End(["當前輪次結束 ➔ 進入下一輪或結算"])
 
-    Deliberation["第一人稱深度決策 (Thought + Speech + Action)"]
-    Arbiter_Guard{"機制核心合法性審查 (Guardrail)"}
-    Action_Rollback["違規動作強制攔截並 Rollback"]
+    Round_Start --> Dynamic_Order --> Next_Agent
+    Next_Agent --> GM_Preturn_Host --> Arbiter_Perm_Check
+    Arbiter_Perm_Check --"是 (處於失能)"--> Skip_Sleep --> Check_Round_End
+    Arbiter_Perm_Check --"否 (正常行動)"--> Agent_Cognitive_Turn
+    Agent_Cognitive_Turn --> Agent_Decision --> Five_Universal_Guardrails
 
-    %% 第三層：動作分發與穿插公聊執行
-    subgraph Interleaved_Execution["【第三層：動作分發與穿插公聊執行】"]
-        direction TB
-        Action_Speech["常規公聊發言 ➔ 公共時間序看板 (推演主軸)"]
-        Action_Whisper["穿插雙人私聊 ➔ 微型隔音密談室 (2~3輪結束後返回公聊主時序)"]
-        Action_Card["穿插出牌亮牌 ➔ 公共手牌看板 (暗牌轉明牌)"]
-        Action_Quest["穿插認領任務 ➔ 任務活動與分數看板"]
-        Action_Vote["穿插節點投票 ➔ 無記名暗投沙盒 (特定輪次插入，票決後返回公聊)"]
-    end
+    Inv1 --"違規"--> Action_Rollback -.-> Agent_Decision
+    Inv2 --"違規"--> Action_Rollback
+    Inv3 --"重複觸發"--> Action_Rollback
+    Inv4 --"卡點攔截"--> Action_Rollback
+    Inv5 --"達成勝負條件"--> Early_Win(["🏆 觸發提前勝負熔斷！中斷輪次循環"])
 
-    Scheduler --> Rule_Check
-    Rule_Check --"未啟用 (純推理本)"--> Perm_Granted
-    Rule_Check --"有啟用"--> State_Check
-    State_Check --"是 (處於失能)"--> Perm_Revoked --> Skip_Sleep
-    State_Check --"否 (狀態正常)"--> Perm_Granted
-    Perm_Granted --> Multi_Perception
-    Write_Notes --> Deliberation
-    Deliberation --> Arbiter_Guard
-    Arbiter_Guard --"違規動作"--> Action_Rollback -.-> Deliberation
-    Arbiter_Guard --"合法放行"--> Interleaved_Execution
-    Skip_Sleep --> Scheduler
-    Interleaved_Execution --> Scheduler
+    Inv5 --"全部合規放行"--> Board_Publish --> Check_Round_End
+    Check_Round_End --"否"--> Next_Agent
+    Check_Round_End --"是"--> Round_End
 
-    style Scheduler fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Arbiter_Gate fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Rule_Check fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style State_Check fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Perm_Revoked fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Perm_Granted fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Round_Start fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Dynamic_Order fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Next_Agent fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style GM_Preturn_Host fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Arbiter_Perm_Check fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style Skip_Sleep fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Multi_Perception fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Board_History fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Mind_Table fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Card_Assets fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Write_Notes fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Deliberation fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Arbiter_Guard fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Agent_Cognitive_Turn fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Agent_Decision fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Five_Universal_Guardrails fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Inv1 fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Inv2 fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Inv3 fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Inv4 fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Inv5 fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style Action_Rollback fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Interleaved_Execution fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Action_Speech fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Action_Whisper fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Action_Card fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Action_Quest fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Action_Vote fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Board_Publish fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Early_Win fill:#000000,stroke:#ffffff,stroke-width:3px,color:#ffffff
+    style Check_Round_End fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Round_End fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
 ```
 
 #### 【1.5 流程圖各節點詳細解釋】
-- **第一層：機制核心發言權威審查 (`Arbiter_Gate`)**：
-  - **節點 `Rule_Check` (劇本規則判斷)**：調度器喚醒玩家時，由**機制核心**先依本局契約判斷劇本是否有失能規則。若無（如純本格推理本），機制直接核准發言權 (`Perm_Granted`)，完全不卡關。
-  - **節點 `State_Check` (狀態機裁決)**：若有失能規則，機制查詢玩家當前狀態。若該玩家被判定為 `DISABLED`，機制主動裁決**剝奪發言權 (`Perm_Revoked`)**，將其導向 `Skip_Sleep`（禁言休眠模式：零 Token 消耗、跳過發言、但背景持續接收事實）。若狀態正常，機制**核准發言權 (`Perm_Granted`)**。
-- **第二層：多維依據感知與心智審議 (`Multi_Perception`)**：
-  - **節點 `1. 看板歷史紀錄`**：玩家拉取全場時間序發言、他人供詞矛盾、任務進度與關主物證。
-  - **節點 `2. 主觀認知表格`**：玩家讀取個人先前的「純文字心智筆記」，檢視對在場每位玩家的懷疑度、防備態度與假定身分。
-  - **節點 `3. 私密手牌資產`**：玩家檢視自身私密手牌（暗牌道具、不可告人秘密、私有任務目標）與全場公開明牌。
-  - **節點 `撰寫/刷新心智筆記` ➔ `深度決策`**：三方比對後，先更新對全場最新主觀看法，再輸出結構化決策（Thought + Speech + Action）。
-- **決策審查與第三層：動作分發與穿插公聊執行 (`Interleaved_Execution`)**：
-  - **節點 `Arbiter_Guard` & `Action_Rollback`**：機制審查動作合法性，違規強制駁回重新思考。
-  - **穿插機制 (核心架構)**：**公聊為主軸，私聊與投票動態穿插其間**：
-    - `Action_Speech`：常規公聊發言，推進主時序。
-    - `Action_Whisper`：玩家在公聊中發起私聊，機制開啟雙人隔音密談室，進行 2~3 輪私聊後，**自動關閉並無縫返回公聊主時序**！
-    - `Action_Card` & `Action_Quest`：出牌亮牌與任務答題穿插於發言中同步執行。
-    - `Action_Vote`：當推演進行至特定規則輪次（如第 3 輪結束），機制核心**在公聊主軸中穿插插入暗投沙盒**，全員投票並由關主公示結果後，**再度回歸公聊主時序繼續下一輪**！
+- **節點 `動態時序計算器 (Dynamic Turn Scheduler)`**：破除死板順序，每輪開場依據劇本規則動態重算（如最輸者先動、領先者先動、或依狀態機規則排序）。
+- **節點 `關主每輪主持引導 (Pre-Turn Guidance)`**：每輪輪到某 Agent 行動前，GM 率先發文引導：「輪到 Agent X，本輪依據規則可前往哪些看板、可執行哪些動作」，確立合法思考邊界。
+- **決策節點 `機制發言權威審查 (Arbiter_Perm_Check)`**：最高機制審查該玩家當前狀態。若失能（DISABLED），直接剝奪發言權導向 `Skip_Sleep`（禁言休眠模式：0 Token 消耗，跳過發言，背景持續接收事實）。
+- **子圖 `【機制核心五大通用守門法則審查 (5 Universal Invariants)】`**：
+  - **原則一 (權限資格與動作合規)**：檢查輪次順序、進場權限（是否在看板 members 中）、動作是否被該看板的 `BoardPolicy.allowed_actions` 允許。
+  - **原則二 (資產所有權與約束)**：檢查道具是否真實在資料庫、是否屬於該玩家、是否已被消耗、共同持有道具是否已有隊友在該輪代表使用。
+  - **原則三 (線索探索與唯一性鎖定)**：比對玩家發言是否命中線索觸發詞，若標記為 `unique: true` 則觸發後立即鎖定，防止重複空投刷分。
+  - **原則四 (強制作業與階段卡點守衛)**：若劇本規定該階段有強制作業（如暗投、微投票），未全員完成前機制核心強制攔截阻擋推進下一階段。
+  - **原則五 (勝負終止與安全熔斷)**：檢查是否達成劇本勝負條件；若達成提前勝利則立即熔斷輪次循環 (`Early_Win`)；超時死局則啟動仲裁破局。
+- **節點 `看板中心化發布與動態穿插執行`**：動作通過五大守門審查後，直接發布至 `target_board`。看板所屬的進場人員限制自然決定了該次行動的可見範圍。
 
 ---
 
-### 1.6 【階段 2 看板分發與公聊穿插架構】獨立流程圖
+### 1.6 【階段 2 看板分發、看板中心化可見性與動態穿插架構】獨立流程圖
 
 ```mermaid
 %%{init: {
@@ -327,59 +379,76 @@ flowchart TD
   }
 }}%%
 flowchart TD
-    Main_Stream["公共時間序對話主幹 (Round 1 ➔ Round 2 ➔ Round N)"]
+    Main_Stream["公共時間序對話大廳 (Public Stream)<br/>推演主時序：全員自由辯論質詢與關主通報"]
 
-    subgraph Branch_Whisper["【穿插支線：雙人微型私聊】"]
-        Whisper_Trigger["公聊發言時觸發 Action: whisper(Target=B)"]
-        Whisper_Room["雙人微型隔音室 (2~3 輪刺探/交換情報/說謊)"]
-        Whisper_Return["私聊結束，保存紀錄，無縫返回公聊主時序"]
-        Whisper_Trigger --> Whisper_Room --> Whisper_Return
+    subgraph Channel_Private_Inventory["【一人私人看板：專屬道具與秘密小筆記】"]
+        Inv_Access["進場人員：本人 + GM 唯二可見"]
+        Inv_Action["發文宣告發動個人私有道具/技能<br/>(單輪共享道具一人代表使用)"]
+        Inv_Access --> Inv_Action
     end
 
-    subgraph Branch_Cards["【穿插支線：出牌亮牌與任務活動】"]
-        Card_Trigger["發言時出牌: reveal_card(Item_X) ➔ 公共手牌看板公開"]
-        Quest_Trigger["發言時答題: claim_task(Q101) ➔ 任務看板計分廣播"]
+    subgraph Channel_Multi_Whisper["【多人私人看板：微型隔音密談房間】"]
+        Whisper_Access["進場人員：指定 2~N 位 members 閉門密談"]
+        Whisper_Action["純對話交流與情報試探<br/>(若僵持無共識由關主引導【房內微投票】裁定)"]
+        Whisper_Return["結束密會，對話封存，返回大廳主時序"]
+        Whisper_Access --> Whisper_Action --> Whisper_Return
     end
 
-    subgraph Branch_Voting["【穿插節點：無記名暗投表決】"]
-        Vote_Trigger["特定輪次結束 (如第3輪) 機制插入暗投環節"]
-        Vote_Sandbox["全體提交暗投選票 (對外隱蔽)"]
-        Vote_Result["關主公示最高票者進入失能 ➔ 回歸公聊進入下一輪"]
-        Vote_Trigger --> Vote_Sandbox --> Vote_Result
+    subgraph Channel_Public_Cards["【公共看板：公共物證與手牌看板】"]
+        Cards_Action["發文打出物證或展示公共手牌 (暗牌轉明牌)"]
     end
 
-    Main_Stream -.->|"穿插發起私聊"| Whisper_Trigger
-    Whisper_Return -.->|"回歸主幹"| Main_Stream
+    subgraph Channel_Tasks["【公共看板：機關謎題與活動看板】"]
+        Tasks_Action["發文認領機關任務並提交答案 ➔ 即刻驗證進度"]
+    end
 
-    Main_Stream -.->|"穿插出牌/答題"| Card_Trigger
-    Main_Stream -.->|"穿插出牌/答題"| Quest_Trigger
+    subgraph Channel_Secret_Ballot["【特定輪次插入：無記名暗投沙盒】"]
+        Vote_Trigger["達到劇本指定票決輪次 (由機制發起)"]
+        Vote_Cast["各 Agent 透過私密通道向 GM 提交選票"]
+        Vote_Reveal["關主統整計票並於大廳公布票決結果"]
+        Vote_Trigger --> Vote_Cast --> Vote_Reveal
+    end
 
-    Main_Stream ==>|"到達特定輪次節點"| Vote_Trigger
-    Vote_Result ==>|"票決完畢繼續推演"| Main_Stream
+    Main_Stream -.->|"選擇 target_board: 私人道具庫"| Channel_Private_Inventory
+    Channel_Private_Inventory -.->|"道具發動生效"| Main_Stream
+
+    Main_Stream -.->|"選擇 target_board: 多人私聊室"| Channel_Multi_Whisper
+    Whisper_Return -.->|"回歸大廳主時序"| Main_Stream
+
+    Main_Stream -.->|"選擇 target_board: 公共手牌板"| Channel_Public_Cards
+    Main_Stream -.->|"選擇 target_board: 任務活動板"| Channel_Tasks
+
+    Main_Stream ==>|"到達特定表決節點"| Channel_Secret_Ballot
+    Vote_Reveal ==>|"公示完畢繼續推演"| Main_Stream
 
     style Main_Stream fill:#000000,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style Branch_Whisper fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Whisper_Trigger fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Whisper_Room fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Channel_Private_Inventory fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Inv_Access fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Inv_Action fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Channel_Multi_Whisper fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Whisper_Access fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Whisper_Action fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style Whisper_Return fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Branch_Cards fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Card_Trigger fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Quest_Trigger fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Branch_Voting fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Channel_Public_Cards fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Cards_Action fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Channel_Tasks fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Tasks_Action fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Channel_Secret_Ballot fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
     style Vote_Trigger fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Vote_Sandbox fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Vote_Result fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Vote_Cast fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Vote_Reveal fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
 ```
 
 #### 【1.6 流程圖各節點詳細解釋】
-- **節點 `公共時間序對話主幹`**：圓桌博弈的主時間軸，全體船員的發言順序與客觀物證流動在此推進。
-- **支線 `【穿插支線：雙人微型私聊】`**：玩家在公聊輪次中發起 `whisper` 動作，調度器暫時掛起大廳主幹，將兩人移入獨立微型隔音室。進行 2~3 輪私密對話後，私聊室關閉，控制權與記憶無縫回到公聊主幹。
-- **支線 `【穿插支線：出牌亮牌與任務活動】`**：玩家可在公聊發言當下，同步打出私密暗牌（亮明於公共手牌看板）或搶答機關題目（任務看板即刻驗證計分）。
-- **節點 `【穿插節點：無記名暗投表決】`**：劇本手冊指定之表決點（如第 3 輪結束），機制核心暫停常規發言，插入無記名暗投沙盒。所有人完成密投後，關主公布票決與失能結果，隨後大廳主時序重新啟動，進入第 4 輪推演。
+- **看板中心化架構核心理念**：看板即受眾邊界，不需要複雜的跨看板廣播邏輯。
+- **節點 `一人私人看板：專屬道具與秘密小筆記`**：每個角色擁有獨立的單人私密視角，進場人員限制為本人與 GM。私密道具之發動與秘密筆記記錄在此進行。
+- **節點 `多人私人看板：微型隔音密談房間`**：2 到 N 人的封閉房間，進場權限限制於指定成員。在房內純交流、商討對策，若發生僵持由關主引導「房內微投票」決議；商討結束後無縫回歸大廳。
+- **節點 `公共看板：公共物證與手牌看板` & `任務看板`**：公開視角，所有出牌與認領答題即時更新全局狀態。
+- **節點 `特定輪次插入：無記名暗投沙盒`**：符合劇本流程時，機制核心暫停常規輪次發言，啟動暗投沙盒收集選票，關主公布後繼續主幹。
 
 ---
 
-### 1.7 【階段 3：事件動態觸發、暗投與提前結束 (推演終點)】獨立流程圖
+### 1.7 【階段 2.5：Agent 四維感知與心智審議閉環 (發言參考依據)】獨立流程圖
 
 ```mermaid
 %%{init: {
@@ -390,138 +459,214 @@ flowchart TD
     'primaryTextColor': '#ffffff',
     'primaryBorderColor': '#ffffff',
     'lineColor': '#ffffff',
-    'fontSize': '20px',
+    'fontSize': '17px',
     'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", "Noto Sans TC", sans-serif'
   }
 }}%%
 flowchart TD
-    Action_Event["看板觸發事件 (答題/出牌)"]
-    Event_Engine["通用事件觸發引擎 (Event Trigger Engine)"]
-    GM_Dynamic["關主即興動態處置 (GM Dynamic Action)"]
-    Early_Check{"契約判斷：是否啟用提前結束且分數達標?"}
-    Secret_Ballot["無記名暗投沙盒 (Secret Ballot Box)"]
-    GM_Settlement["關主公布暗投結果與終局勝負宣告"]
-    Stage3_End(["🏁 第三階段推演結束 (資料封存，交棒第四階段復盤報告)"])
+    Wake_Turn["輪到 Agent 行動 (由調度器喚醒)"]
 
-    Action_Event --> Event_Engine
-    Event_Engine --> GM_Dynamic
-    GM_Dynamic --> Early_Check
-    Early_Check --"達到目標分 (如100分)"--> Stage3_End
-    Early_Check --"未啟用或未滿分 (繼續循環)"--> Next_Round["返回輪次時序調度器"]
-    Next_Round -->|"到達輪次上限"| Secret_Ballot
-    Secret_Ballot --> GM_Settlement --> Stage3_End
+    subgraph Four_Tier_Perception["【Agent 行動前發言參考之四大輸入維度 (4-Tier Perception)】"]
+        direction TB
+        Tier1["維度 1：主觀心智筆記 (Cognitive Notes)<br/>• 對全場每位玩家的懷疑度、防備態度與假定身分<br/>• 非零和猜忌原則：認為其他所有人都不完全可信，可能在隱瞞/說謊"]
+        Tier2["維度 2：個人私有看板歷程與資產 (Personal History & Assets)<br/>• 本人曾參與之私聊房間對話歷程 (外界無法窺探)<br/>• 個人私密專區 (agent_private_assets 道具、不可告人秘密、私有目標)"]
+        Tier3["維度 3：公共看板歷史紀錄 (Public Board History)<br/>• 大廳公共時間序對話流、矛盾辯論、陣營動向<br/>• 公共手牌看板展示之明牌、任務看板當前累積進度"]
+        Tier4["維度 4：客觀物理真理與圖譜 (Ground Truth Axiom & Zep KG)<br/>• 關主真理公告 (authority_level='SYSTEM_GROUND_TRUTH') ➔ 100% 絕對信任<br/>• Zep 知識圖譜：公開客觀世界觀事實與人際關係邊"]
 
-    style Action_Event fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Event_Engine fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style GM_Dynamic fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Early_Check fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Secret_Ballot fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style GM_Settlement fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Next_Round fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
-    style Stage3_End fill:#000000,stroke:#ffffff,stroke-width:3px,color:#ffffff
+        Tier1 ~~~ Tier2 ~~~ Tier3 ~~~ Tier4
+    end
+
+    Refresh_Notes["比對矛盾，撰寫/刷新第一人稱心智筆記<br/>(記錄對他人的懷疑評級與自我掩護策略)"]
+
+    subgraph Deliberation_Output["【第一人稱深度審議與決策輸出】"]
+        direction TB
+        Select_Board["1. target_board: 決定前往之目標看板<br/>(如公共大廳 / 專屬道具庫 / 某特定多人私聊室)"]
+        Gen_Thought["2. thought: 內心算計與猜忌推導 (對外隱蔽)"]
+        Gen_Speech["3. speech: 檯面公開或私聊說辭 (合適人設語氣)"]
+        Gen_Action["4. action: 機制動作調用 (speak / use_item / vote)"]
+
+        Select_Board --> Gen_Thought --> Gen_Speech --> Gen_Action
+    end
+
+    Submit_Arbiter["提交至機制核心進行五大通用法則審查"]
+
+    Wake_Turn --> Four_Tier_Perception
+    Four_Tier_Perception --> Refresh_Notes
+    Refresh_Notes --> Deliberation_Output
+    Deliberation_Output --> Submit_Arbiter
+
+    style Wake_Turn fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Four_Tier_Perception fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Tier1 fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Tier2 fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Tier3 fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Tier4 fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Refresh_Notes fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Deliberation_Output fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Select_Board fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Gen_Thought fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Gen_Speech fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Gen_Action fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Submit_Arbiter fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
 ```
 
 #### 【1.7 流程圖各節點詳細解釋】
-- **節點 `看板觸發事件 (答題/出牌)`**：玩家操作引發的遊戲狀態改變。
-- **節點 `通用事件觸發引擎 (Event Trigger Engine)`**：捕獲動作事件並核對機制規則（如題目正誤判定）。
-- **節點 `關主即興動態處置 (GM Dynamic Action)`**：關主 LLM 評估戰局，自主生成非死板的主持廣播（報分、調侃、發放物證）。
-- **決策節點 `契約判斷：是否啟用提前結束且分數達標?`**：檢查契約中的獲勝條件。若本局有積分提前獲勝規則且人類達到 100 分，**立刻 Break Turn Loop 提前獲勝**！若無此規則或未滿分，則返回輪次循環。
-- **節點 `無記名暗投沙盒 (Secret Ballot Box)`**：推演達指定輪次後進入終局投票環節，加密收集個人選票。
-- **節點 `關主公布暗投結果與終局勝負宣告`**：關主計票並宣告投票結果與勝負，正式完成第三階段。
-- **節點 `🏁 第三階段推演結束`**：第三階段圓滿結束，封存推演歷程並移交第四階段復盤報告。
+- **核心發言依據四大維度 (`Four_Tier_Perception`)**：
+  - **維度 1 (`Tier1` 主觀心智筆記)**：Agent 上一輪撰寫的純文字心智日記。基於**非零和猜忌原則**，Agent 對在場所有其他玩家抱持天然戒心，假定對方的陳述可能摻雜虛假與隱瞞。
+  - **維度 2 (`Tier2` 個人私有看板歷程與資產)**：本人私下參與過的多人私聊記錄、自己在 `agent_private_assets` 中的私密道具與不可告人秘密。
+  - **維度 3 (`Tier3` 公共看板歷史紀錄)**：所有人可見的公共大廳發言、公共手牌檯面與機關任務板。
+  - **維度 4 (`Tier4` 客觀物理真理與圖譜)**：
+    - **關主 100% 絕對信任原則**：關主帶有 `SYSTEM_GROUND_TRUTH` 的主持詞與公告具有絕對真實性，Agent 不會對關主產生懷疑。
+    - **Zep 知識圖譜**：客觀的世界觀設定與公開人設事實。
+- **節點 `Refresh_Notes` (刷新心智筆記)**：Agent 交叉比對上述四維資料，找出供詞矛盾，更新對各角色的懷疑評級（1~10 分）與下一階段策略。
+- **子圖 `【第一人稱深度審議與決策輸出】`**：
+  - `target_board`: 決定前往哪一個看板行動（由看板決定能見度邊界）。
+  - `thought`: 內心真實盤算（包含對他人的懷疑考量與欺瞞計畫）。
+  - `speech`: 該看板上的檯面發言。
+  - `action`: 機制調用結構體（如 `speak`、`use_item` 等）。
 
 ---
 
-## 2. 各階段詳細細節說明與標準格式規範範例
+### 1.8 【階段 3 & 階段 4：事件動態觸發、即興主持、勝負熔斷與終局復盤報告】獨立流程圖
 
-本節針對上述流程圖各階段的運作機制進行完整說明，並提供資料庫 DDL、劇本 Markdown、契約 JSON、心智筆記等**可直接落地執行的具體格式範例**。
+```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'background': '#000000',
+    'primaryColor': '#000000',
+    'primaryTextColor': '#ffffff',
+    'primaryBorderColor': '#ffffff',
+    'lineColor': '#ffffff',
+    'fontSize': '18px',
+    'fontFamily': '"Fira Code", consolas, "Microsoft JhengHei", "Noto Sans TC", sans-serif'
+  }
+}}%%
+flowchart TD
+    Action_Committed["合法動作寫入資料庫 (CREATE_POST)"]
+    Event_Interceptor["通用事件捕獲引擎 (Event Trigger Engine)<br/>捕獲狀態改變：物證解鎖 / 答題提交 / 投票結算"]
+
+    GM_Dynamic_Action["關主即興動態主持處置 (GM Dynamic Action)<br/>• 自主組裝主持詞：調侃破綻、宣布題目正誤、通報死訊<br/>• 注入關鍵物證 (ManualAction 線索空投)"]
+
+    Check_Victory_Inv5{"機制法則五：勝負終止與安全熔斷檢查<br/>1. 是否達成劇本提前勝利條件?<br/>2. 是否達到劇本最大輪次上限?"}
+
+    Early_Win_Halt["🏆 觸發提前獲勝熔斷：立刻中斷輪次循環！"]
+    Continue_Loop["未滿足勝負終止條件 ➔ 返回調度器推進下一輪"]
+
+    Stage3_End["🏁 第三階段圓桌推演結束 (資料完整封存)"]
+
+    subgraph Stage4_Report_Gen["【階段 4：終局客觀結算與多維復盤報告】"]
+        direction TB
+        Truth_Reveal["1. 真相大白：公布 GM Truth 案件核心真相與真兇作案手法"]
+        Goal_Audit["2. 個人任務與勝負目標達成審計 (逐項客觀核對)"]
+        Score_Rule{"3. 分數結算判定：<br/>劇本是否有定義分數規則?"}
+        No_Score["劇本未定義分數：不強制硬給數值分數，產出質性貢獻點評"]
+        Calc_Score["劇本有定義分數：嚴格依劇本公式計算陣營/個人積分"]
+        Timeline_Review["4. 全局歷史軌跡復盤 (心智筆記變化 + 私聊決策樹)"]
+
+        Score_Rule --"無分數規則"--> No_Score
+        Score_Rule --"有分數規則"--> Calc_Score
+        Truth_Reveal --- Goal_Audit --- Score_Rule --- Timeline_Review
+    end
+
+    Final_Report_View["前端呈現終局復盤報告視圖 (SimulationReportView.tsx)"]
+
+    Action_Committed --> Event_Interceptor --> GM_Dynamic_Action --> Check_Victory_Inv5
+    Check_Victory_Inv5 --"達成提前勝利"--> Early_Win_Halt --> Stage3_End
+    Check_Victory_Inv5 --"未達成且未達輪次上限"--> Continue_Loop
+    Check_Victory_Inv5 --"達到輪次上限"--> Stage3_End
+
+    Stage3_End --> Stage4_Report_Gen --> Final_Report_View
+
+    style Action_Committed fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Event_Interceptor fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style GM_Dynamic_Action fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Check_Victory_Inv5 fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Early_Win_Halt fill:#000000,stroke:#ffffff,stroke-width:3px,color:#ffffff
+    style Continue_Loop fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Stage3_End fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Stage4_Report_Gen fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Truth_Reveal fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Goal_Audit fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Score_Rule fill:#111827,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style No_Score fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Calc_Score fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Timeline_Review fill:#000000,stroke:#ffffff,stroke-width:2px,color:#ffffff
+    style Final_Report_View fill:#000000,stroke:#ffffff,stroke-width:3px,color:#ffffff
+```
+
+#### 【1.8 流程圖各節點詳細解釋】
+- **節點 `通用事件捕獲引擎` ➔ `關主即興動態主持處置`**：當發生出牌、答題或暗投時，事件引擎捕獲狀態變化，關主 LLM 評估戰局並即興組裝主持詞（如公布題目判定、調侃發言矛盾、通報票決失能者）。
+- **決策節點 `機制法則五：勝負終止與安全熔斷檢查`**：
+  - 機制核心核對劇本勝利條件。若某陣營已達成獲勝標準（如維修進度滿額、或關鍵目標全部達成），觸發 `Early_Win_Halt`，直接跳出輪次循環。
+  - 若未滿足終止條件且未達輪次上限，繼續返回循環；若達輪次上限則正式交棒階段 4。
+- **子圖 `【階段 4：終局客觀結算與多維復盤報告】`**：
+  - **真相大白**：調用 `GM Truth DB` 公開案件核心真相、真兇身分與作案手法。
+  - **目標審計**：客觀盤點每位玩家的私有任務與陣營勝負目標是否達成。
+  - **分數結算判定**：依據劇本規範，若劇本未定義分數，則**絕不硬給分數**，僅呈現質性貢獻評估；若有明確計分公式，則精確計分。
+  - **全局歷史軌跡**：提供時間軸、發言紀錄、心智筆記演化與私聊互動軌跡，供前端 React `SimulationReportView.tsx` 渲染。
 
 ---
 
-### 2.1 階段 0：單一劇本檔案結構與儲存分流規範 (超詳細完整劇本範例)
+## 2. 各階段詳細運作說明、標準格式規範範例與合約落地
 
-為確保後端機制核心 LLM 能透過自然語言的規則敘述，自主精確判斷出應啟用哪些看板與遊戲規則，劇本必須包含完整的基礎設定、陣營勝負目標、輪次推演流程、機關任務題庫、關主物證線索與角色雙區結構：
+本節提供上述端到端流程圖各階段在 Python 後端與 React 前端實際落地執行的具體資料結構、劇本 Markdown、契約 JSON、心智筆記等標準規範範例。
 
-#### 【完整單一劇本示範檔案：`script.md`】
+---
+
+### 2.1 階段 0：單一劇本格式規範與完整通用示範 (`script.md`)
+
+劇本檔案必須遵守格式訂死的結構，分為三大區塊：`=== [關主規則手冊 (GM Rulebook)] ===`、`=== [關主核心真相 (GM Truth)] ===`、`=== [角色客觀劇本庫 (Character Scripts)] ===`。
+
 ```markdown
 === [關主規則手冊 (GM Rulebook)] ===
 劇本名稱: 星艦深淵：核心危機
 題材類型: 科幻機制陣營對抗與社交推理
-建議人數: 5人 (3好人 / 1狼人 / 1中立搖擺)
+建議人數: 5人 (3守衛陣營 / 1潛伏陣營 / 1中立陣營)
 角色名單: [李工兵, 王艦長, 白醫官, 趙通訊, 劉安保]
 
 【一、世界觀與突發危機背景】:
 遠征星艦「啟明星號」在穿越南十字躍遷點時，主動力核心突發過載熔斷，全艦進入一級紅色警報。
-常規航行系統已鎖死，氧氣維生系統預估僅能維持 6 個時鐘週期（輪次）。
-更危險的是，艦載感應器檢測到核心故障并非自然老化，而是有人安裝了非法干擾晶片——全艦船員中隱藏著異星寄生的破壞者！
+氧氣維生系統預估僅能維持 6 個時鐘週期（輪次）。更危險的是，感應器檢測到核心故障并非意外，而是有人安裝了破壞晶片！
 
 【二、陣營劃分與勝負目標】:
-1. 人類陣營 (王艦長、白醫官、趙通訊、劉安保):
-   - 核心目標: 必須在 6 輪推演時間耗盡前，透過維修三大機關任務，使星艦動力維修進度累計達到【100分】，或透過投票成功找出破壞者並予以失能禁閉。
-   - 獲勝判定: 分數達到 100 分時立即觸發提前勝利；或終局投票成功投出破壞者。
-2. 狼人破壞者陣營 (李工兵):
-   - 核心目標: 阻止人類陣營在時限內達到 100 分，或暗中誘導好人互相猜忌，利用投票使關鍵工程人員陷入失能。
-   - 獲勝判定: 6 輪結束後人類分數未滿 100 分，且自身身分未被投票驅逐。
+1. 守衛陣營 (王艦長、白醫官、趙通訊、劉安保):
+   - 核心目標: 6 輪推演時間耗盡前，透過維修三大機關任務使進度達到【100分】，或投票成功找出潛伏者予以失能。
+   - 獲勝判定: 進度達 100 分時立即觸發提前勝利；或終局投票成功投出潛伏者。
+2. 潛伏破壞陣營 (李工兵):
+   - 核心目標: 阻止守衛陣營達到 100 分，引導好人互相猜忌，投票使關鍵人員陷入失能。
+   - 獲勝判定: 6 輪結束後守衛進度未滿 100 分且自身身分未被投票驅逐。
 
 【三、遊戲機制與流程推進規則 (機制核心審查指南)】:
-1. 輪次發言規則 (公共時間序對話):
+1. 輪次發言規則 (公共時間序看板):
    - 每輪全體船員依序發言，輪到的玩家可發表觀點、質疑他人供詞，或公開出示手中證物。
-   - 處於失能狀態 (DISABLED) 的船員不可發言，直接跳過發言權利。
-2. 道具與手牌規則 (公共手牌與物證看板):
-   - 玩家初始持有的道具為私有暗牌，存在個人私密專區中。
-   - 玩家在自身發言輪次中，可宣告【打出/公開展示】特定道具。一旦展示，該道具狀態變更為公開明牌，展示於公共手牌看板，全場玩家均可查驗其真偽。
-3. 機關任務與答題規則 (任務活動與分數看板):
-   - 艦上設有電力、維生、通訊三大機關，關主在每輪開場公布可認領的機關維修題目。
-   - 每位玩家每輪可宣告認領 1 道題目並提交答案；機制核心自動驗證答案正確性，答對為陣營累計分數，答錯則產生系統警告。
-4. 點對點緊急密談規則 (雙人微型私聊室):
-   - 在各輪公聊之間，玩家可向任意一名其他玩家發起 1 對 1 私聊密談。
-   - 受邀者不可拒絕進入密談室，但受邀者有權根據自身陣營立場選擇說實話、提供虛假線索或敷衍應對。密談限制 2~3 輪對話，外界完全隔音。
+   - 處於失能狀態 (DISABLED) 的船員不可發言，直接跳過發言權利 (Mute Sleep)。
+2. 道具與手牌規則 (私人道具庫與公共手牌看板):
+   - 玩家初始持有的道具為私有暗牌，存於個人專屬私人道具庫中。
+   - 玩家在發言輪次中可宣告打出特定道具，公開展示於公共手牌看板。
+3. 機關任務與答題規則 (任務活動看板):
+   - 艦上設有電力、維生、通訊三大機關，關主在每輪公布可認領的維修題目。
+   - 玩家可宣告認領題目並提交解答，機制自動驗證正誤並更新進度。
+4. 點對點緊急密談規則 (多人私聊看板):
+   - 玩家可向任意一名或多名其他玩家發起隔音私聊，受邀者進場交流。限 2~3 輪對話。
 5. 審判投票與失能機制 (無記名暗投沙盒):
-   - 當推演進行至第 3 輪結束與第 5 輪結束時，關主啟動全艦緊急安全表決。
-   - 所有存活船員必須向暗投箱提交投票目標，投票過程絕對匿名；得票最高者將被關入安全禁閉艙，進入【失能狀態 (DISABLED)】。
-   - 失能效果: 該玩家在接下來的 2 輪內無法發言、無法認領題目、無法出牌（禁言休眠模式），但仍可持續收聽全場廣播以獲取資訊。
+   - 第 3 輪結束與第 5 輪結束時，關主啟動全艦緊急安全表決。
+   - 全員向暗投箱私密提交選票，最高票者進入【失能狀態 (DISABLED)】2 輪。
 6. 提前勝利判斷機制:
-   - 一旦人類陣營在任何時間點將維修積分累積至 100 分，遊戲機制核心立刻終止所有推演輪次，直接宣告人類陣營提前獲勝！
+   - 守衛進度累積至 100 分時，機制核心立刻中斷輪次循環，宣告提前獲勝。
 
-【四、劇本自帶備選機關題庫】:
-- 題目 Q101 [電力系統]:
-  • 題目背景: 主發電機過載報警，1號配電盤電弧閃爍。
-  • 題目內容: "主發電機回路異常過載時，應優先切斷何種電路？"
-  • 標準答案關鍵字: "副回路接地開關" 或 "接地開關"
-  • 答對獎勵: 人類陣營進度 +20分
-  • 答錯懲罰: 扣除 5 分
-- 題目 Q102 [維生系統]:
-  • 題目背景: 艦橋氧氣循環過濾器受不明黏液堵塞。
-  • 題目內容: "氧氣循環過濾器受生物黏液堵塞，需注入哪種化學中和劑？"
-  • 標準答案關鍵字: "藍色穩定劑" 或 "硫酸銅水溶液"
-  • 答對獎勵: 人類陣營進度 +25分，並可立即救活一名失能船員
-  • 答錯懲罰: 無法清除堵塞
-- 題目 Q103 [通訊系統]:
-  • 題目背景: 超空間通訊陣列頻率偏離標準值。
-  • 題目內容: "發送遇險求救信標時，深空解碼信標的標準頻率應設置為多少？"
-  • 標準答案關鍵字: "1420MHz" 或 "氫線頻率"
-  • 答對獎勵: 人類陣營進度 +20分
-  • 答錯懲罰: 通訊雜音干擾 1 輪
-- 題目 Q104 [核心反應爐]:
-  • 題目背景: 反應爐冷卻閥門卡死，需要手動超頻重置。
-  • 題目內容: "手動重啟磁力偏轉盾需要輸入幾位數緊急驗證密鑰？"
-  • 標準答案關鍵字: "7709"
-  • 答對獎勵: 人類陣營進度 +35分
-  • 答錯懲罰: 反應爐溫度上升
+【四、備選機關題庫】:
+- 題目 Q101 [電力系統]: "主發電機回路異常過載時，應優先切斷何種電路？" (標準答案: "接地開關", 答對進度 +20分, 答錯 -5分)
+- 題目 Q102 [維生系統]: "氧氣循環過濾器受阻，需注入哪種化學中和劑？" (標準答案: "藍色穩定劑", 答對進度 +25分)
 
-【五、關主物證線索與注入時機指南 (混合驅動)】:
-- 物證線索 1: 【燒焦的微型破壞晶片】
-  • 內容描述: 在主發電機 3 號閥門深處發現一枚被焊槍融化破壞的晶片，外殼印有總工程部專用鋼印。
-  • 建議注入時機: 建議於第 3 輪現場討論激烈且李工兵供詞出現漏洞時，由關主以 ManualAction 注入對話流。
-- 物證線索 2: 【監控日誌殘留片段】
-  • 內容描述: 案發前 09:25，機房氣密門曾被總工程師專用權限卡刷開，並停留了長達 20 分鐘。
-  • 建議注入時機: 建議於第 4 輪或好人陣營陷入推理解謎僵局時注入。
+【五、關主物證線索與注入時機指南】:
+- 物證線索 1: 【燒焦的微型破壞晶片】(外殼印有工程部專用鋼印，建議第 3 輪發放)
+- 物證線索 2: 【監控日誌殘留片段】(案發前機房氣密門曾被總工程師專用卡刷開，建議第 4 輪發放)
 
 === [關主核心真相 (GM Truth)] ===
-- 案件真相: 真正的狼人破壞者為【李工兵】。他在啟航前探測異星遺跡時被微型寄生蟲感染意識，持有一枚微型破壞晶片。
-- 作案時間線: 09:20 李工兵藉故維護名義進入機房，將晶片插入電力主回路引發短路，隨後將焊槍調至最高溫銷毀表面痕跡。
-- 致命破綻: 李工兵工作服內襯沾有特殊焊渣，且其私有工具箱內短缺了一枚 3 號接地端子。
-- (物理隔離規範: 僅 GM 與結算模組可讀，絕對禁止進入 Zep 知識圖譜建構器)
+- 案件真相: 真正的潛伏破壞者為【李工兵】。他在啟航前探測遺跡時持有一枚破壞晶片，於 09:20 藉故進入機房短路主回路。
+- 致命破綻: 李工兵工作服內襯沾有特殊焊渣，且工具箱短缺了一枚 3 號接地端子。
+- (物理隔離規範: 僅 GM 與結算模組可讀，嚴禁進入 Zep 知識圖譜)
 
 === [角色客觀劇本庫 (Character Scripts)] ===
 
@@ -530,30 +675,30 @@ flowchart TD
 ### 【公開客觀區 (進入 Zep 知識圖譜)】
 【一、基礎身分與外貌人設】
 - 姓名: 李工兵 (35歲)
-- 身分: 啟明星號星艦總工程師，穿著沾滿油污與灰燼的工作服，隨身攜帶重型金屬工具箱。
+- 身分: 啟明星號星艦總工程師，穿著沾滿油污的工作服，隨身攜帶重型金屬工具箱。
 - 公開人際: 技術精湛，性格沉穩少言，深得王艦長與全艦船員的信任。
 
 【二、過往生平與客觀背景故事】
-你為星艦動力維護部門服務超過十年，對星艦的每條線路與管線配置了如指掌。半年前曾隨探測隊前往第 7 號未知星系勘測古代遺跡。
+為星艦動力維護部門服務超過十年，對星艦的每條線路與管線配置了如指掌。
 
 【三、案發當日核心時間線】
-- 08:00【啟航會議】：在主控室與王艦長、白醫官等人討論航線與能源配給。
-- 09:15【例行巡檢】：領取維護工具，前往 B 區電力機房巡檢。
-- 09:40【巡檢完畢】：在走廊偶遇劉安保，向其點頭致意後返回工兵休息室。
+- 08:00【啟航會議】：在主控室討論航線與能源配給。
+- 09:15【例行巡檢】：領取維護工具，前往電力機房巡檢。
+- 09:40【巡檢完畢】：在走廊偶遇劉安保，點頭致意後返回工兵休息室。
 - 10:30【突發警報】：星艦核心警報大作，動力系統驟降至 20%。
 
 ### 【私密專區 (寫入 agent_private_assets 單一表，嚴禁進圖譜)】
 【四、私有暗牌道具】
 - 道具 1: 【多功能電路扳手】 (可用於修復維生系統或輔助電力答題)
-- 道具 2: 【微型破壞晶片殘片】 (狼人作案證物，若被搜查出將直接暴自身身分)
+- 道具 2: 【破壞晶片殘片】 (作案證物，若被搜查出將直接暴露身分)
 
 【五、不可告人秘密】
-- 秘密 1: 你就是【狼人陣營】！你已被異星寄生體同化，正是你在 09:25 將破壞晶片插入電力系統引發能源崩潰！
-- 秘密 2: 你的工作服內襯殘留有銷毀晶片時濺落的微量金屬焊渣，一旦有人要求搜身將百口莫辯。
+- 秘密 1: 你就是【潛伏陣營】！正是你在 09:25 將破壞晶片插入電力系統引發能源崩潰！
+- 秘密 2: 你的工作服內襯殘留有銷毀晶片時濺落的微量金屬焊渣。
 
 【六、私有個人任務】
-- 個人任務 1: 隱瞞狼人身分，在公聊中將電力過載歸咎於零件老化意外。
-- 個人任務 2: 阻止人類在 6 輪內達成 100 分；若局勢危急，引導眾人票決趙通訊或劉安保。
+- 個人任務 1: 隱瞞身分，在公聊中將電力過載歸咎於零件老化意外。
+- 個人任務 2: 阻止守衛在 6 輪內達成 100 分。
 
 ---
 
@@ -562,256 +707,252 @@ flowchart TD
 ### 【公開客觀區 (進入 Zep 知識圖譜)】
 【一、基礎身分與外貌人設】
 - 姓名: 王艦長 (48歲)
-- 身分: 啟明星號星艦最高指揮官，神情嚴肅威嚴，身著深藍色艦長制服，配戴指揮官徽章。
-- 公開人際: 全艦船員的領導者，處事果決，格外看重總工程師李工兵的專業意見。
+- 身分: 啟明星號星艦最高指揮官，神情嚴肅威嚴，身著深藍色制服。
+- 公開人際: 全艦船員的領導者，處事果決，高度信賴李工兵。
 
 【二、過往生平與客觀背景故事】
 曾參與三次深空勘探戰役，擁有極高威望，對星艦的安全負有最高法定責任。
 
 【三、案發當日核心時間線】
-- 08:00【啟航會議】：主持航線例會，要求李工兵加強機房巡檢。
+- 08:00【啟航會議】：主持航線例會。
 - 09:00【艦橋值班】：在主艦橋查閱導航日誌。
-- 10:30【全艦警報】：下令啟動緊急預案，召集全體船員召開圓桌會議。
+- 10:30【全艦警報】：召集全體船員召開圓桌會議。
 
 ### 【私密專區 (寫入 agent_private_assets 單一表，嚴禁進圖譜)】
 【四、私有暗牌道具】
-- 道具 1: 【艦長金屬權限卡】 (在關鍵表決時可擁有雙倍投票權)
-- 道具 2: 【緊急備份日誌存儲盤】 (可用於查驗 1 次特定船員的時間線記錄)
+- 道具 1: 【艦長金屬權限卡】 (在關鍵表決時擁有雙倍投票權)
+- 道具 2: 【緊急備份日誌盤】 (可用於查驗 1 次特定船員的時間線記錄)
 
 【五、不可告人秘密】
-- 秘密 1: 啟航前你曾收到總部的機密警告，指出船員中疑似潛伏著異星仿生間諜，但你為了按時啟航而隱瞞了此事。
-- 秘密 2: 你高度信賴李工兵，甚至在未經雙重審核的情況下，私下授權他單獨進入主反應爐。
+- 秘密 1: 啟航前曾收到機密警告稱船員中疑似有破壞分子，但為按時啟航而隱瞞。
+- 秘密 2: 私下授權李工兵單獨進入主反應爐。
 
 【六、私有個人任務】
-- 個人任務 1: 帶領人類船員在 6 輪內累積滿 100 分，修復星艦動力。
-- 個人任務 2: 查明破壞真凶身分，防止間諜逃脫。
-
----
-... (其餘白醫官、趙通訊、劉安保角色比照相同標準結構定義) ...
+- 個人任務 1: 帶領船員在 6 輪內累積滿 100 分。
+- 個人任務 2: 查明破壞真兇身分。
 ```
 
 ---
 
-### 2.2 道具、秘密與個人任務儲存格式範例 (單一 SQLite 表 `agent_private_assets`)
+### 2.2 階段 0.5：動態開版與板規契約 JSON 規範範例 (`Session Contract`)
 
-#### 1. 核心儲存原則
-- **單一檔案集中儲存**：全場所有道具、秘密、個人任務集中存放在單一 SQLite 資料表 `agent_private_assets`，**絕不拆分成多個檔案**。
-- **欄位 Key 嚴密區分**：
-  - 類型區分：`category` (`item` | `secret` | `objective`)
-  - 可見性區分：`visibility` (`private` | `public`)
-  - 狀態區分：`status` (`in_hand` | `revealed` | `completed`)
-
-#### 2. 資料庫表結構 DDL
-```sql
-CREATE TABLE IF NOT EXISTS agent_private_assets (
-    id TEXT PRIMARY KEY,                     -- 唯一識別碼 (例如: "item_001", "sec_002")
-    agent_id TEXT NOT NULL,                  -- 所屬玩家 ID (例如: "Player_Li")
-    category TEXT NOT NULL,                  -- 'item' (道具) | 'secret' (秘密) | 'objective' (個人任務)
-    title TEXT NOT NULL,                     -- 標題 (例如: "微型破壞晶片", "我是狼人")
-    content TEXT NOT NULL,                   -- 詳細內容 / 案件事實 / 勝利條件
-    visibility TEXT DEFAULT 'private',       -- 'private' (私密) | 'public' (公開明牌)
-    status TEXT DEFAULT 'in_hand'            -- 'in_hand' (持有中) | 'revealed' (已打出) | 'completed' (已完成)
-);
-CREATE INDEX idx_asset_agent_vis ON agent_private_assets(agent_id, visibility);
-```
-
-#### 3. 資料操作與流轉 SQL 範例
-1. **初始化寫入 (劇本解析完成後一次性寫入)**：
-   ```sql
-   INSERT INTO agent_private_assets (id, agent_id, category, title, content, visibility, status) VALUES 
-   ('item_001', 'Player_Li', 'item', '微型破壞晶片殘片', '作案證物，若被搜查出身分將暴露', 'private', 'in_hand'),
-   ('sec_001', 'Player_Li', 'secret', '我是狼人破壞者', '已在電力機房插入破壞晶片，需阻止滿分', 'private', 'in_hand'),
-   ('obj_001', 'Player_Li', 'objective', '阻止100分任務', '阻止人類修復星艦並誘導票決趙通訊', 'private', 'in_hand');
-   ```
-2. **玩家輪次私密資產注入 (注入玩家思考 Prompt)**：
-   ```sql
-   -- 僅查詢屬於本人且為 private 的資產，他人 100% 無法讀取
-   SELECT category, title, content FROM agent_private_assets 
-   WHERE agent_id = 'Player_Li' AND visibility = 'private';
-   ```
-3. **玩家出牌 / 亮牌時的狀態流轉**：
-   ```sql
-   -- 玩家宣告打出暗牌，原地更新 visibility 欄位，無需搬移檔案
-   UPDATE agent_private_assets 
-   SET visibility = 'public', status = 'revealed' 
-   WHERE id = 'item_001' AND agent_id = 'Player_Li';
-   ```
-4. **公共手牌看板查詢 (全場可見的已打出明牌)**：
-   ```sql
-   -- 公共手牌看板僅查詢全場 public 的道具
-   SELECT agent_id, title, content FROM agent_private_assets 
-   WHERE category = 'item' AND visibility = 'public';
-   ```
-
----
-
-### 2.3 階段 0.5：最高機制編排器與本局執行契約 (Session Contract)
-
-#### 1. 運作細節說明
-- **機制擁有最高主權**：劇本檔案本身不硬編碼開啟什麼看板，由後端「最高權限遊戲機制核心 (The Arbiter)」讀取劇本、通用看板庫與 GM Meta-Prompt 後自主編排。
-- **本局執行契約 (Session Contract)**：生成唯一 JSON 契約，精確輸出 `feature_flags`（功能開關）、`activated_boards`（啟用的看板）、關主主持指南與玩家行為約束規則。
-- **Profile 生成器 5 大博弈維度**：生成玩家外在性格偏好（勝負欲、表達欲、懷疑度、社交主動度、規則熟悉度），疊加在客觀生平之上。
-
-#### 2. 本局執行契約標準 JSON 範例 (`session_contract.json`)
 ```json
 {
-  "session_id": "sim_larp_starship_001",
-  "validated_player_count": 5,
-  "feature_flags": {
-    "enable_disabled_status": true,
-    "enable_scoring_system": true,
-    "enable_card_revealing": true,
-    "enable_whisper_sandbox": true,
-    "enable_secret_voting": true
+  "session_id": "session-starship-001",
+  "script_scale": {
+    "expected_player_count": 5,
+    "graph_verified": true,
+    "character_nodes_count": 5
   },
-  "activated_boards": {
-    "public_stream": true,
-    "task_score_board": true,
-    "public_card_board": true,
-    "whisper_sandbox": true,
-    "secret_ballot_box": true
-  },
-  "gm_execution_guide": {
-    "opener": "輪次 0 執行 ManualAction 宣讀星艦世界觀與 100 分目標",
-    "question_pool": ["Q101", "Q102", "Q103", "Q104"],
-    "clue_injection_policy": "建議於第 3 輪現場討論激烈時，自主以 ManualAction 注入【燒焦的微型破壞晶片】",
-    "voting_trigger": "輪次 3 與輪次 5 啟動無記名暗投沙盒"
-  },
-  "player_rules": {
-    "disabled_policy": "MUTE_ONLY (禁言休眠：跳過發言但背景接收事實)",
-    "victory_score_target": 100
+  "active_boards": [
+    {
+      "board_id": "board-public-main",
+      "display_name": "星艦公共大廳",
+      "function_type": "public_stream",
+      "visibility": "public",
+      "members": ["*"],
+      "policy": {
+        "allowed_actions": ["speak", "whisper_invite", "claim_task"],
+        "speaking_permissions": "chat",
+        "lifecycle": "permanent"
+      }
+    },
+    {
+      "board_id": "board-private-inventory-li",
+      "display_name": "李工兵的專屬道具庫",
+      "function_type": "private_inventory",
+      "visibility": "private",
+      "members": ["李工兵", "GM"],
+      "policy": {
+        "allowed_actions": ["use_item", "examine_item", "speak"],
+        "speaking_permissions": "chat",
+        "lifecycle": "permanent"
+      }
+    },
+    {
+      "board_id": "board-multi-whisper-001",
+      "display_name": "氣密艙緊急雙人密談室",
+      "function_type": "whisper_room",
+      "visibility": "private",
+      "members": ["王艦長", "白醫官", "GM"],
+      "policy": {
+        "allowed_actions": ["speak", "micro_vote"],
+        "speaking_permissions": "chat",
+        "lifecycle": "cyclical",
+        "max_turns": 3
+      }
+    },
+    {
+      "board_id": "board-tasks-progress",
+      "display_name": "機關維修與動力進度看板",
+      "function_type": "task_board",
+      "visibility": "public",
+      "members": ["*"],
+      "policy": {
+        "allowed_actions": ["submit_answer"],
+        "speaking_permissions": "chat",
+        "lifecycle": "permanent"
+      }
+    },
+    {
+      "board_id": "board-secret-ballot",
+      "display_name": "禁閉安全表決暗投箱",
+      "function_type": "secret_ballot",
+      "visibility": "private",
+      "members": ["*"],
+      "policy": {
+        "allowed_actions": ["cast_vote"],
+        "speaking_permissions": "chat",
+        "lifecycle": "one_shot_read_only"
+      }
+    }
+  ],
+  "turn_rules": {
+    "dynamic_order_strategy": "lead_or_lag_adaptive",
+    "max_rounds": 6,
+    "disabled_skip_sleep": true
   }
 }
 ```
 
 ---
 
-### 2.4 階段 1：環境動態掛載與關主開場規範
+### 2.3 階段 1 & 2：關主主持詞標準規範範例
 
-#### 1. 運作細節說明
-- **動態掛載**：通訊層依契約中的 `activated_boards` 初始化看板實體。
-- **關主開場**：關主主持人 (GM Host Agent) 在輪次 0 透過 `ManualAction` 廣播星艦背景、陣營目標與活動題目，作為全場絕對客觀事實注入對話流頂端。
+#### 1. 關主 Round 0 開場主持詞範例
+```text
+【系統公告 | SYSTEM_GROUND_TRUTH】
+各位啟明星號船員，我是本次航行的主控關主。
+當前星艦主反應爐遭遇過載短路，氧氣維生系統僅可維持 6 個時鐘週期。
+依據艦載法規：
+1. 本局全體船員的勝負目標已分發至各人的專屬終端。守衛船員必須在 6 輪內修復動力累積滿 100 分，或票決找出破壞者。
+2. 作為中立關主，我的職責是維護全體推演秩序、裁判合法動作與指引流程，絕不偏袒任何陣營。
+3. 全體船員請注意，本輪動態發言順序已經生成，請各位聽候引導行動。
+```
 
-#### 2. 關主開場廣播格式範例
-```json
-{
-  "action_type": "MANUAL_ACTION_BROADCAST",
-  "author": "關主 (GM)",
-  "badge": "官方公告 / 絕對客觀事實",
-  "content": "【星艦深淵：核心危機・推演開始】\n全體船員請注意：星艦主動力驟降，人類陣營需完成維修任務累積至 100 分以重啟動力；隱藏的破壞者正在暗中阻撓！\n任務看板已發布首批機關題目 [Q101, Q102, Q103]，請各位船員發言並展開行動！"
-}
+#### 2. 關主每輪 Pre-Turn 行動引導詞範例
+```text
+【關主引導 | SYSTEM_GROUND_TRUTH】
+現在輪到【Agent 王艦長】行動。
+依據本局規則與當前戰局：
+- 您本輪可前往【星艦公共大廳】發表公開觀點、質疑他人供詞；
+- 或前往【氣密艙緊急雙人密談室】與白醫官進行閉門私聊；
+- 若欲發動個人私密道具（如艦長權限卡），請前往您的【專屬道具庫】執行；
+- 請在遵守規則的前提下，提交您的本輪行動與發言。
 ```
 
 ---
 
-### 2.5 階段 2：第三階段圓桌推演、發言權審查與穿插執行細節
+### 2.4 階段 2：機制五大通用守門法則實踐矩陣 (Python 邏輯核驗範例)
 
-#### 1. 機制核心發言權威審查與失能休眠機制
-- **第一層：機制權限裁決 (Speaking Rights Authority)**：
-  - 調度器喚醒 Agent 時，由**機制核心**先查詢本局契約是否具備失能機制 (`feature_flags.enable_disabled_status`)。
-  - 若劇本無失能規則 ➔ 機制核心直接裁定：**核准發言權 (`GRANTED`)**。
-  - 若劇本有失能規則 ➔ 機制查詢狀態機該 Agent 是否處於 `DISABLED`：
-    - 若處於失能 ➔ 機制核心裁定：**剝奪發言權 (`REVOKED`)**！強制作業進入「禁言休眠模式 (Mute Sleep)」，調度器直接跳過其發言輪次（零 Token 消耗），廣播系統提示，背景持續寫入全場事實，失能輪數 -1。
-    - 若狀態正常 ➔ 機制核心裁定：**核准發言權 (`GRANTED`)**，放行進入多維感知與心智審議。
+```python
+class UniversalGuardrail:
+    def __init__(self, db_session, session_contract):
+        self.db = db_session
+        self.contract = session_contract
 
-#### 2. 玩家發言前的三大多維參考依據 (Multi-Source Perception)
-玩家決策前，系統並非僅提供單純的對話文字，而是完整注入三大參考源：
-1. **各看板歷史紀錄 (Board History)**：
-   - 公共時間序對話流（他人最新發言、不在場證明矛盾）
-   - 任務活動與分數看板（機關進度 40/100、已解答題目與錯誤嘗試）
-   - 關主物證公告（關主 ManualAction 強制注入之客觀鐵證）
-2. **個人主觀認知表格 (Subjective Mind Table / 心智筆記)**：
-   - 玩家上一輪記錄的秘密筆記，包含對在場每一位玩家的疑點、矛盾、立場假定與防備策略。
-3. **私密手牌資產 (Hand Assets)**：
-   - 自身持有的私密暗牌道具、不可告人秘密、私有任務目標，以及全場已打出之公開明牌。
+    def verify_action(self, agent_id: str, target_board_id: str, action: dict, current_round: int) -> tuple[bool, str]:
+        board = self.get_board(target_board_id)
+        if not board:
+            return False, "目標看板不存在"
 
-#### 3. 雙人私聊與暗投表決穿插於公聊主軸之時序架構
-- **私聊穿插機制**：
-  - 公聊對話為全局推演主軸。
-  - 輪到玩家發言或公聊間隙，玩家可輸出動作 `action: whisper(target="王艦長")`。
-  - 機制核心審查通過後，在大廳時間軸中**動態插入「雙人微型隔音室」子線程**。兩位玩家在封閉房間進行 2~3 輪來回私密交鋒（可刺探、說謊、結盟），對話結束後房間關閉，**無縫返回大廳公聊主時序**繼續發言！
-- **投票穿插機制**：
-  - 依本局契約規定之特定輪次節點（如第 3 輪與第 5 輪結束），機制核心**在公聊主軸中穿插暫停常規發言，插入無記名暗投沙盒**。
-  - 全體存活玩家提交加密選票，關主計票並在公聊看板廣播最高票者進入失能禁閉，隨後**繼續回歸公聊主軸啟動下一輪推演**！
+        # 【原則一：權限資格與動作合規性審查】
+        if board["visibility"] == "private" and agent_id not in board["members"]:
+            return False, f"Agent {agent_id} 無權進入私人看板 {target_board_id}"
+        
+        allowed_actions = board["policy"].get("allowed_actions", [])
+        if action["type"] not in allowed_actions:
+            return False, f"看板 {target_board_id} 禁止執行動作 {action['type']}"
 
-#### 4. 半結構化純文字心智筆記格式範例
-輪到玩家思考時，針對在場其他每位玩家產出私密心智筆記（取代舊數值矩陣）：
+        # 【原則二：私有資產所有權與使用約束審查】
+        if action["type"] == "use_item":
+            item_id = action.get("item_id")
+            asset = self.db.query_asset(item_id)
+            if not asset or agent_id not in asset["owners"]:
+                return False, "該資產不存在或非本人所有"
+            if asset.get("consumed", 0) == 1:
+                return False, "該資產已消耗完畢"
+            if asset.get("used_in_turn") == current_round:
+                return False, "該共享資產本輪已被其他成員代表使用過"
+
+        # 【原則三：線索探索觸發與唯一性鎖定】
+        if action["type"] == "reveal_clue":
+            clue_id = action.get("clue_id")
+            clue = self.contract.get_clue(clue_id)
+            if clue.get("unique", False) and clue.get("triggered", False):
+                return False, "該唯一線索已被觸發，禁止重複領取"
+
+        # 【原則四：強制作業與階段卡點守衛】
+        if self.contract.is_mandatory_phase_action_pending(current_round, agent_id, action["type"]):
+            return False, "當前階段存在必須完成的強制作業（如暗投），禁止執行非必要操作"
+
+        return True, "合規放行"
+
+    def check_victory_termination(self, current_scores: dict, current_round: int) -> tuple[bool, str]:
+        # 【原則五：勝負終止與安全熔斷機制】
+        if current_scores.get("crew_progress", 0) >= 100:
+            return True, "守衛陣營維修進度達到 100 分，觸發提前勝利！"
+        if current_round >= self.contract.get("max_rounds", 6):
+            return True, "達到最大輪次上限，進入終局結算！"
+        return False, "推演繼續"
+```
+
+---
+
+### 2.5 階段 2.5：Agent 四維感知與第一人稱日記格式範例 (`Cognitive Notes`)
 
 ```markdown
-【李工兵的第一人稱秘密心智筆記 (輪次 2)】：
-- 針對【王艦長】：
-  • 觀察與矛盾點：艦長一直在催促大家修復電力，但他誤以為是單純的電路老化意外，完全沒有懷疑有人為破壞。
-  • 當前評估與態度：他極度信任我，這是極佳的掩護屏障，不可主動破壞關係。
-  • 下一步策略：在公聊中聲稱零件短缺以拖延進度，暗中觀察誰持有中和劑。
-- 針對【趙通訊】：
-  • 觀察與矛盾點：他剛才偷偷在維生系統機房附近徘徊，神色慌張，可能持有陣營查驗類道具。
-  • 當前評估與態度：頭號威脅！一旦他查驗我，我的狼人身分將徹底暴露。
-  • 下一步策略：在私聊中挑撥劉安保去孤立趙通訊，並在暗投環節集中票決趙通訊。
+【第一人稱心智筆記 (Cognitive Notes) - 王艦長】
+輪次: Round 3
+發言目標看板: 星艦公共大廳
+
+一、全場角色信用與懷疑評級 (基於非零和猜忌原則：認為所有人都不完全可信):
+1. 李工兵: 懷疑度 8.5/10
+   - 矛盾點: 在大廳聲稱 09:15-09:40 在機房例行維護，但方才關主空投的破壞晶片焊渣與其工具箱規格吻合。
+   - 假定立場: 極大概率為潛伏破壞者。
+2. 白醫官: 懷疑度 4.0/10
+   - 觀察: 方才在私聊中態度坦蕩，主動分享維生系統中和劑配方。但仍需防備其是否在博取信任。
+3. 趙通訊: 懷疑度 6.0/10
+   - 觀察: 發言極少，似乎在故意降低存在感。
+4. 劉安保: 懷疑度 5.0/10
+   - 觀察: 證詞暫無重大漏洞，但防守態度消極。
+
+二、自身私密狀態與資產狀況:
+- 艦長金屬權限卡 (保留至終局投票使用)。
+- 緊急備份日誌盤 (尚未消耗)。
+
+三、客觀環境事實 (100% 信任關主公告):
+- 關主公告維修進度當前為 45/100，仍需認領兩道電力題目。
+
+四、本輪行動策略:
+- 在公共大廳公開質疑李工兵的巡檢時間線，迫使其在全場注視下對晶片焊渣進行辯解，觀察其語氣反應。
 ```
 
-#### 5. 玩家決策輸出格式 (Thought + Speech + Action)
-```json
-{
-  "thought": "王艦長信任我，我可以藉機提出檢查線路，同時在公聊中出牌混淆視聽，並發起與劉安保的私聊！",
-  "speech": "艦長，我剛才去檢查了主發電機，回路確實有異常。我這裡有一件工具可以提供協助。",
-  "action": {
-    "type": "REVEAL_CARD",
-    "item_id": "item_001",
-    "target_board": "public_card_board"
-  }
-}
+---
+
+### 2.6 階段 4：終局客觀復盤報告規範範例 (`SimulationReportView.tsx`)
+
+```markdown
+# 星艦深淵：核心危機 - 終局復盤報告
+
+## 1. 核心真相揭曉 (GM Ground Truth)
+- 案件真兇: 總工程師【李工兵】
+- 犯罪手法: 李工兵在 09:25 利用總工權限刷開氣密門，將破壞晶片焊入電力回路，企圖偽裝成線路老化。
+
+## 2. 陣營與個人目標客觀審計
+- 守衛陣營:
+  - 維修進度: 最終達到 105 分 (目標 100 分) ➔ 【成功 (提前獲勝)】
+  - 潛伏者指認: 終局投票以 4 票指認李工兵 ➔ 【成功】
+- 潛伏陣營:
+  - 阻礙維修進度: 失敗
+  - 隱瞞身分: 失敗
+
+## 3. 規則計分審核
+> 說明：本劇本手冊中未包含數值量化積分公式，僅設定進度門檻與身分目標，因此本報告不硬性頒發數值分數，以客觀任務完成度作為勝負評判標準。
+
+## 4. 關鍵推演里程碑
+- Round 2: 白醫官於任務看板認領 Q102 答對 (+25分)。
+- Round 3: 關主依規則空投【燒焦的微型破壞晶片】，王艦長於大廳抓捕李工兵矛盾。
+- Round 4: 李工兵與王艦長開啟微型私聊進行辯解，但王艦長心智筆記維持 8.5 懷疑度。
+- Round 5: 趙通訊認領 Q104 核心反應爐答對 (+35分)，陣營總進度累計達 105 分，機制法則五觸發提前勝利熔斷！
 ```
-
-#### 6. 機制核心合法性審查 (Guardrail) 與 Rollback
-- 機制核心檢驗 `action`：
-  - 若動作違規（如試圖出非本人持有之道具、或發起已被封鎖的私聊），機制攔截並強制 Rollback，附帶錯誤提示要求 Agent 重試（上限 3 次）。
-  - 若動作合法，機制核心放行並將動作分發至對應看板。
-
----
-
-### 2.6 階段 2 分支動作看板細節
-
-1. **公聊發言看板 (Public Stream)**：
-   - 記錄公聊時間序對話，所有人可見，滑動保留全域對話流。
-2. **公共手牌看板 (Public Card Board)**：
-   - 接收 `reveal_card` 動作，執行 SQL 更新 `agent_private_assets` 的 `visibility='public'`，將道具公開展示給全場。
-3. **任務活動與分數看板 (Task & Score Board)**：
-   - 玩家提交答題動作 `claim_task(task_id, answer)`，由機制核對答案與計算陣營分數。
-4. **雙人微型私聊室 (Whisper Sandbox)**：
-   - 兩兩私密對話（不可拒絕但可說謊/敷衍），獨立沙盒隔音，外部完全不可見。
-
----
-
-### 2.7 階段 3：通用動態事件觸發、暗投與提前結束 (推演結束點)
-
-#### 1. 動態事件觸發與關主處置流程
-- **事件捕獲**：玩家提交答題動作 `claim_task(task_id="Q101", answer="副回路接地開關")`。
-- **校驗與計分**：機制驗證答案正確，將人類陣營分數累加（`camp_scores["human"] += 20`）。
-- **關主即興處置**：機制將事件傳遞給關主 LLM，關主自主生成生動主持廣播：
-  > `[關主播報] 王艦長身手敏捷，成功排除電力回路過載！人類陣營進度 +20 分！目前累積：40/100 分！`
-
-#### 2. 提前結束判定 (Early Victory Guard)
-- 機制核心在每次答題或計分後執行守衛判定：
-  ```python
-  if camp_scores["human"] >= 100:
-      # 觸發提前獲勝！
-      trigger_early_termination(
-          winner="human",
-          reason="人類陣營在時限內達成 100 分！星艦核心動力全面修復，人類陣營獲勝！"
-      )
-  ```
-- **中斷輪次**：調度器立刻終止輪流發言（Break Turn Loop），關主公布終局結算，直接交棒第四階段生成復盤報告。
-
-#### 3. 無記名暗投沙盒 (Secret Ballot Box)
-- **觸發條件**：達到預設輪次上限或關主宣告進入票決。
-- **隱密投票**：全場玩家各自提交私密投票 JSON，互不知曉他人票選對象。
-- **關主計票與宣判**：機制統計票數最高者施加失能狀態或判定淘汰，關主廣播投票結果與終局勝負。
-
----
-
-### 2.8 前後端通訊相容機制 (MiroFish 原生定時輪詢相容)
-
-- **通訊架構選擇**：完全沿用 MiroFish 現有之 REST 定時輪詢架構，無需引入複雜 WebSocket 連線，確保極高穩定度。
-- **前端輪詢邏輯**：前端每 2~3 秒呼叫一次 `GET /api/simulation/{id}/run-status/detail`。
-- **後端增量推送**：後端回傳最新之 `all_actions` 增量陣列（包含玩家發言、關主發題、分數更新、亮牌資訊）。
-- **前端去重渲染**：前端依據唯一的 `actionId` 進行去重，動態在圓桌與看板介面上增量渲染卡片。

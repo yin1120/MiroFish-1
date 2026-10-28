@@ -20,11 +20,11 @@ graph TB
 
         direction TB
 
-        Unified_Script["1. 單一結構化劇本檔案 (script.md - 格式訂死嚴格校驗)<br/>• 格式固定: (A)關主部分、(B)公開角色劇本、(C)角色秘密，Regex嚴格檢驗排錯<br/>• 關主手冊 (規模/世界觀/流程規則/勝負/題庫/真相/物證)<br/>• 角色知識庫 (公開人設 vs 私密專區: 秘密/道具技能/個人目標/時間線)"]
+        Unified_Script["1. 單一結構化劇本檔案 (script.md - 格式訂死嚴格校驗)<br/>• 格式固定: (A)關主部分、(B)公開角色劇本、(C)角色秘密，Regex嚴格檢驗排錯<br/>• 關主手冊 (規模/世界觀/流程規則/勝負/題庫/真相/物證/其他自定義擴充 other)<br/>• 角色知識庫 (公開人設 vs 私密專區: 秘密/道具技能/個人目標/時間線/自定義 other)"]
 
         Board_Lib["2. 後端 5 大經典通用看板參考能力庫 (Canonical Reference Archetypes)<br/>- 供 LLM Prompt 參考對照之基準母範本：公聊大廳、單人道具板、公共手牌板、任務活動板、多人私聊，作為動態生成新看板與板規之 Few-Shot 參照基準"]
 
-        GM_Meta_Prompt["3. 關主職責元規範 (GM Meta-Prompt Guidelines)<br/>- 6 大固定主持流水線、官方真理標籤 (SYSTEM_GROUND_TRUTH) 與 ManualAction 工具集"]
+        GM_Meta_Prompt["3. 關主職責元規範 (GM Meta-Prompt Guidelines)<br/>- 雙階段主持流水線 (開場全域宣讀 vs 每輪點名引導)、官方真理標籤 (SYSTEM_GROUND_TRUTH) 與 ManualAction 工具集"]
 
     end
 
@@ -36,9 +36,9 @@ graph TB
 
         Parser["劇本解析與名額校驗器 (script_parser.py)<br/>- 原子拆解 4 大區塊分流存儲，強制核對 Agent 數量與身分名冊"]
 
-        Contract_Orchestrator["本局契約編排器 (Session Contract Generator)<br/>- 讀取劇本純規則與補底法則，比對特徵庫【自主推導並裁決】：<br/>  • 本局啟用之看板清單 (5 大通用看板動態開關)<br/>  • 關主主持指南與物證注入時機 (語意評估器)<br/>  • 玩家約束矩陣 (共有道具單輪限用一次、失能禁言休眠)"]
+        Contract_Orchestrator["本局契約編排器 (Session Contract Generator)<br/>- 讀取劇本規則與 other 自定義擴充，【三階段動態開版與規則編譯】：<br/>  • 步驟一：提取核心功能 (討論/道具資產/密謀/做題/自定義交互)<br/>  • 步驟二：劃分屬性與進場邊界 (全域公開 vs 私人 1-on-1 vs 多人私聊)<br/>  • 步驟三：實例化本局專屬看板 (如競標版/資產版/密室) 並編譯專屬板規<br/>  • 動態編譯劇本特有規則與特例校驗器 (Custom Exception Rules)"]
 
-        State_Machine["全局狀態機與最高仲裁守門員 (State Machine & Guardrail)<br/>- 【通用六大原則性審查矩陣 (6 Universal Invariants)】:<br/>  ①權力資格與動作合規 (整合時序/失能/板規白名單)<br/>  ②資產歸屬與使用約束  ③線索解鎖與獨佔防刷<br/>  ④強制特定動作推進守衛  ⑤資訊能見度與隔音迷霧(誰能看見)<br/>  ⑥勝負終止與安全熔斷<br/>- 【機制權力最大】：事前原子攔截、事中分發、事後終止"]
+        State_Machine["全局狀態機與最高仲裁守門員 (State Machine & Guardrail)<br/>- 【通用五大物理法則元架構 (5 Universal Meta-Invariants)】:<br/>  ①權力資格與動作合規 (時序/失能/看板通行與白名單)<br/>  ②資產歸屬與使用約束  ③線索解鎖與獨佔防刷<br/>  ④強制特定動作推進守衛  ⑤勝負終止與安全熔斷<br/>  (註：具體審查規則由劇本動態編譯生成，特例規則掛載至原則審查槽)<br/>- 【看板自帶能見度】：在哪個看板發言即決定受眾，無冗餘計算"]
 
     end
 
@@ -62,7 +62,7 @@ graph TB
 
         direction TB
 
-        GM_Agent["關主主持人 (GM Host Agent)<br/>- 依據機制契約主持：固定執行開場宣讀、私密資產發放、階段切換、微投票引導、死訊通報與終局復盤<br/>- 官方真理權威：發布之公告、物證與票決結果強制打上【authority_level='SYSTEM_GROUND_TRUTH'】<br/>- 引導玩家於私聊達成共識後至【私人專屬道具板】代表發動技能"]
+        GM_Agent["關主主持人 (GM Host Agent)<br/>- 核心雙階段主持體系：<br/>  • 部分 A【開場全域主持宣讀】：大廳發布，宣讀世界觀、全域規則、流程、勝負條件與超然身分<br/>  • 部分 B【每輪個人行動引導】：每輪點名當前 Agent，指示可用看板清單 (available_boards) 與合法動作白名單 (allowed_actions)<br/>- 官方真理權威：發布之公告、物證與票決結果強制打上【authority_level='SYSTEM_GROUND_TRUTH'】"]
 
     end
 
@@ -72,7 +72,7 @@ graph TB
 
         direction TB
 
-        Scheduler["動態時序調度器 (Dynamic Turn Scheduler)<br/>- 每輪動態重算發言順序 (如上輪最輸者先發/領袖先行/自定義規則)<br/>- 關主點名引導 ➔ Agent自主選台決策 ➔ 通用七大原則審查<br/>- DISABLED 者直接休眠跳過 (0 Token)"]
+        Scheduler["動態時序調度器 (Dynamic Turn Scheduler)<br/>- 每輪動態重算發言順序 (如上輪最輸者先發/領袖先行/自定義規則)<br/>- 調度流程：關主每輪點名引導 ➔ Agent參考可見看板歷史等四維資料決策 ➔ 通用五大原則審查<br/>- DISABLED 者直接休眠跳過 (0 Token)"]
 
         Polling_API["REST 增量輪詢 API (/api/simulation/{id}/run-status/detail)<br/>- 前端每 2~3 秒定時拉取最新 Actions<br/>- 關主發題/報分/廣播均作為高權限 CREATE_POST 貼文"]
 
@@ -104,11 +104,11 @@ graph TB
 
         direction TB
 
-        Perception["1. 感知環境事實 (Perception - 雙通道認知分流)<br/>• 通道一【客觀物理真理 (SYSTEM_GROUND_TRUTH)】: 關主公告/規則/死訊 ➔ 100% 絕對信任，絕無說謊動機<br/>• 通道二【主觀博弈觀察 (PLAYER_CHAT)】: 其他玩家言論 ➔ 批判懷疑，可能說謊自保<br/>• 通道三【自身私密資產】: owners 包含自己之道具/秘密/目標"]
+        Perception["1. 感知環境事實 (Perception - 四維決策輸入)<br/>• 通道一【可見看板歷史 (Accessible Boards History)】: 通行看板之所有最新貼文紀錄<br/>• 通道二【憲法級雙重公理 (Dual Axioms)】: 關主 100% 絕對真理 vs 對手博弈猜忌 (天然涵蓋自保隱瞞)<br/>• 通道三【自身私密資產與任務】: owners 包含自己之道具/秘密/個人獲勝目標<br/>• 通道四【關主當前主持指示 (GM Turn Guiding)】: available_boards 與 allowed_actions 白名單"]
 
-        Cognitive_Notes["2. 延遲心智更新 (Lazy Cognitive Notes)<br/>- 僅輪到行動時喚醒，交叉比對各方矛盾，更新第一人稱日記"]
+        Cognitive_Notes["2. 延遲心智更新 (Lazy Cognitive Notes)<br/>- 僅輪到行動時喚醒，比對可見看板歷史與公理，更新第一人稱日記與懷疑評級"]
 
-        Deliberation["3. 第一人稱決策行動 (Deliberation & Action)<br/>- 輸出 thought + speech + action (發言/出牌/答題/暗投)"]
+        Deliberation["3. 第一人稱決策行動 (Deliberation & Action)<br/>- 輸出：目標選台 (target_board) + action_type + content + action_payload"]
 
 
 
@@ -168,128 +168,93 @@ graph TB
 
 ## 1.1 系統端到端總體運作流程圖 (End-to-End Operational Flow)
 
-
-
 ```mermaid
-
 flowchart TD
-
-    Start([0. 啟動系統並上傳劇本]) --> Phase0_Orchestrate
-
-
+    Start([0. 啟動系統並上傳劇本 script.md]) --> Phase0_Orchestrate
 
     subgraph Phase0_Orchestrate["【階段零：機制核心解析與本局編排】"]
-
         direction TB
+        Input1["讀取單一結構化劇本 (script.md 格式訂死正則檢驗)"]
+        Input2["參考 5 大看板能力原型庫 (Few-Shot Prompt 基準母範本)"]
+        Input3["參考關主職責元規範 (中立裁判、維護秩序、引導推演)"]
 
-        Input1["讀取單一結構化劇本 (關主全局手冊 + 角色劇本庫，無看板名詞)"]
-
-        Input2["參考通用看板能力庫 (後端 5 大看板特徵對照表)"]
-
-        Input3["參考關主職責元規範 (6 大固定主持流水線 + 預設補底法則)"]
-
-        Orchestrate["機制核心綜合評估與編排：<br/>1. 原子拆解四大區塊：規則進契約池、真相進 gm_truths、公開生平先行生成 Zep KG、私密專區進 assets<br/>2.【圖譜先行與規模雙向校驗】：比對圖譜角色節點數是否剛好為 N、社交邊是否吻合劇本描述，排除幽靈/缺漏角色，並可視化供研究員確認<br/>3. 比對特徵庫自主推導本局啟用之看板清單與動態板規 (功能優先 ➔ 屬性劃分)<br/>4. 設定玩家約束矩陣與動態發言順序推導器"]
-
-
+        Orchestrate["機制核心綜合評估與編排：<br/>1. 原子拆解四大區塊：規則進契約池、真相進 gm_truths、公開生平先行生成 Zep KG、私密專區進 assets<br/>2.【圖譜先行與規模雙向校驗】：比對圖譜角色節點數是否剛好為 N、社交邊是否連通吻合，排除幽靈/缺漏角色<br/>3.【功能優先 ➔ 屬性劃分 ➔ 動態板規合成】：推導啟用之看板清單與 BoardPolicy (allowed_actions, permissions, 3種生命週期)<br/>4. 設定玩家約束矩陣與動態發言順序推導器"]
 
         Input1 ~~~ Input2 ~~~ Input3 --> Orchestrate
-
     end
-
-
 
     Phase0_Orchestrate --> Phase1_InitBoards
 
-
-
     subgraph Phase1_InitBoards["【階段一：環境掛載與關主開場】"]
-
         direction TB
-
-        MountBoards["通訊層動態掛載所選看板 (前端 REST 輪詢同步)"]
-
-        GMOpener["關主依機制指示執行開場 ManualAction (CREATE_POST)：<br/>宣讀世界觀、陣營任務與本局規則"]
+        MountBoards["通訊層動態掛載契約看板群 (前端 REST 輪詢同步)"]
+        GMOpener["關主執行開場 ManualAction (CREATE_POST)：<br/>宣讀世界觀、陣營勝負目標、時序流程與關主中立裁判職責<br/>(強制標記 authority_level='SYSTEM_GROUND_TRUTH')"]
 
         MountBoards --> GMOpener
-
     end
-
-
 
     Phase1_InitBoards --> Phase2_TurnLoop
 
-
-
     subgraph Phase2_TurnLoop["【階段二：機制嚴格約束下的輪次與博弈循環 (彈性私聊與私密投票穿插公聊)】"]
-
         direction TB
+        DynamicOrder["動態時序計算器 (Dynamic Turn Scheduler)：<br/>每輪開場依據劇本規則動態重算發言順序 (如上輪最輸者先發/順時針)"]
+        
+        GMPreturn["關主每輪 Pre-Turn 行動引導廣播：<br/>'輪到 Agent X，本輪依規則可前往哪些看板、執行哪些動作'"]
 
-        CheckPerm{"機制發言權威審查：<br/>【機制權力最大】<br/>判定是否具備發言權?"}
+        CheckPerm{"機制發言權威審查：<br/>該 Agent 是否處於 DISABLED 失能狀態?"}
 
-        SkipSleep["【禁言休眠模式】<br/>• 機制裁決無發言權 (失能)<br/>• 跳過發言 / 0 Token / 背景接收事實"]
+        SkipSleep["【禁言休眠模式 (Mute Sleep)】<br/>• 機制裁決剝奪發言權 (失能)<br/>• 跳過發言 / 0 Token / 背景持續接收事實"]
 
-        MultiPerception["玩家行動前之多維思考依據 (Perception)：<br/>1.【個人主觀看板 (心智筆記)】: 懷疑度/信用評級/私密策略/偽裝規劃<br/>2.【個人看板歷史紀錄】: 個人道具視窗/專屬私聊隔音歷史/秘密劇本目標<br/>3.【公共看板歷史紀錄】: 公開大廳歷史/公共道具板檯面/任務看板進度<br/>4.【客觀真理與圖譜】: 關主真理公告 (SYSTEM_GROUND_TRUTH) / 客觀社交邊"]
+        MultiPerception["玩家行動前之四維思考依據 (4-Tier Perception)：<br/>1.【主觀心智筆記】: 對全場防備猜忌/假定身分/矛盾梳理 (非零和猜忌)<br/>2.【個人私有看板歷程與資產】: 私聊隔音歷史/個人專屬道具/秘密目標<br/>3.【公共看板歷史紀錄】: 公開大廳歷史/公共手牌板/任務看板進度<br/>4.【客觀物理真理與圖譜】: 關主真理公告 (100% 絕對信任) / Zep KG 客觀事實"]
 
-        WriteNotes["撰寫/刷新第一人稱心智筆記"]
+        WriteNotes["比對矛盾，撰寫/刷新第一人稱心智筆記"]
 
-        DeliberateAction["輸出決策：thought + speech + action"]
+        DeliberateAction["輸出決策：target_board + thought + speech + action"]
 
-        GuardCheck{"最高機制核心合法性審查 (Arbiter Guardrail)<br/>【合不合規則由機制 100% 決定】"}
+        subgraph Universal_Guardrails["【機制核心五大通用守門法則 (5 Universal Invariants)】"]
+            direction TB
+            Inv1{"原則一：權限資格與動作合規 (順序/失能/看板進場/allowed_actions)"}
+            Inv2{"原則二：資產歸屬與使用約束 (私有真偽/consumed/共享單輪限一人)"}
+            Inv3{"原則三：線索探索與唯一性鎖定 (語意觸發/unique鎖定防重複)"}
+            Inv4{"原則四：強制作業與階段卡點守衛 (強制暗投/微投票未完成阻擋推進)"}
+            Inv5{"原則五：勝負終止與安全熔斷 (提前勝利熔斷/超時死局仲裁破局)"}
+            Inv1 --> Inv2 --> Inv3 --> Inv4 --> Inv5
+        end
 
-        InterleavedDispatch["動作分發與執行 (全發文驅動)：<br/>• 常規公聊發言 (推進大廳主時序，玩家間相互質詢辯論與表態；關主以宣布與主持為主，暫不開放向關主提問)<br/>• 彈性多人私聊 (純交流，支援情報片段分享；若討論無共識由關主引導【房內微投票】快速裁定)<br/>• 道具與技能使用 (商討/表決達成共識後由 GM 引導代表至【私人專屬道具板】使用；共同持有道具單輪限由一人代表使用一次)<br/>• 公開出牌/亮物證 (在【公共道具板】發文打出)<br/>• 任務答題 (在【任務活動與分數板】發文認領並提交解答)<br/>• 底層投票功能 (關主透過私聊通道發起詢問，玩家私密提交選票，GM 統整於大廳公布)"]
+        RollbackAction["違規動作強制攔截並 Rollback 重思"]
 
+        BoardPublish["看板中心化發布與動態穿插執行：<br/>直接發布至 target_board，能見度自動由看板房間與 members 決定"]
 
-
-        CheckPerm --"無發言權 (失能禁言)"--> SkipSleep
-
-        CheckPerm --"具發言權 (正常)"--> MultiPerception
-
-        MultiPerception --> WriteNotes --> DeliberateAction --> GuardCheck
-
-        GuardCheck --"違規"--> RollbackAction -.-> DeliberateAction
-
-        GuardCheck --"合法"--> InterleavedDispatch
-
+        DynamicOrder --> GMPreturn --> CheckPerm
+        CheckPerm --"失能禁言"--> SkipSleep
+        CheckPerm --"正常發言"--> MultiPerception
+        MultiPerception --> WriteNotes --> DeliberateAction --> Universal_Guardrails
+        Inv1 --"違規"--> RollbackAction -.-> DeliberateAction
+        Inv2 --"違規"--> RollbackAction
+        Inv3 --"重複"--> RollbackAction
+        Inv4 --"卡點"--> RollbackAction
+        Universal_Guardrails --"全部合規"--> BoardPublish
     end
-
-
 
     Phase2_TurnLoop --> Phase3_EventResponse
 
-
-
     subgraph Phase3_EventResponse["【階段三：動態事件觸發與提前結束判定】"]
-
         direction TB
-
-        EventOccur["事件捕獲 (如: 答題成功/出牌/破壞)"]
-
-        GMWake["喚醒關主 LLM 靈活處置：<br/>• 自主決定主持詞 (非硬編碼)<br/>• 調整陣營分數 / 發放道具"]
-
-        CheckWin{"達成劇本勝負<br/>或終止條件?"}
-
-        EarlyVictory["【觸發提前結束！】<br/>中斷輪次循環，宣告勝利"]
-
-
+        EventOccur["事件捕獲 (如: 答題成功/出牌/發動技能)"]
+        GMWake["喚醒關主 LLM 靈活處置：<br/>• 即興主持詞 (宣布題目正誤/調侃矛盾/通報票決)<br/>• ManualAction 空投物證線索"]
+        CheckWin{"機制法則五判定：<br/>達成劇本勝負條件或輪次上限?"}
+        EarlyVictory["【觸發提前獲勝熔斷！】<br/>中斷輪次循環，宣告獲勝"]
 
         EventOccur --> GMWake --> CheckWin
-
-        CheckWin --"是"--> EarlyVictory
-
-        CheckWin --"否"--> NextTurn([進入下一輪])
-
+        CheckWin --"達成提前獲勝"--> EarlyVictory
+        CheckWin --"未達成且未超限"--> NextTurn([推進下一輪次])
     end
 
-
-
-    ApplyAction --> EventOccur
-
+    BoardPublish --> EventOccur
     SkipSleep --> NextTurn
-
     NextTurn --> Phase2_TurnLoop
-
-    EarlyVictory --> Phase4_Report([進入第四階段：生成復盤報告])
-    end
+    EarlyVictory --> Phase4_Report([進入第四階段：生成終局復盤報告])
+    CheckWin --"達輪次上限"--> Phase4_Report
 ```
 
 ---
